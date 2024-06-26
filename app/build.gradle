@@ -1,7 +1,8 @@
 plugins {
+    id 'kotlin-kapt'
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
-    id 'kotlin-kapt'
+    id 'com.google.gms.google-services'
 }
 
 android {
@@ -20,7 +21,6 @@ android {
 
     buildTypes {
         debug{
-            applicationIdSuffix ".debug"
             versionNameSuffix "-debug"
             debuggable true
             minifyEnabled false
@@ -75,5 +75,11 @@ dependencies {
     implementation 'androidx.cardview:cardview:1.0.0'
     //viewPager dependency
     implementation 'androidx.viewpager:viewpager:1.0.0'
+    //firebase
+    implementation platform('com.google.firebase:firebase-bom:33.1.1')
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation("com.google.firebase:firebase-config")
+    //dots indicator
+    implementation("com.tbuonomo:dotsindicator:5.0")
 
 }
