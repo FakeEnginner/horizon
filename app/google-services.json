@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "267019165931",
+    "project_id": "horizon-50df2",
+    "storage_bucket": "horizon-50df2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:267019165931:android:dc64fb2528c8a659cb1eae",
+        "android_client_info": {
+          "package_name": "com.example.horizon"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCc3Uqswd2iI0AJQtHj4T5shp31qDPvTAA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
