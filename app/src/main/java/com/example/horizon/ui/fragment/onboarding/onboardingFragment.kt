@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageView
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
 import com.example.horizon.R
@@ -41,21 +42,20 @@ class onboardingFragment : Fragment() {
             }
         })
 
-        view.findViewById<Button>(R.id.btnNext).setOnClickListener {
+        view.findViewById<ImageView>(R.id.btnNext).setOnClickListener {
             val nextItem = viewPager.currentItem + 1
             if (nextItem < onboardingAdapter.itemCount) {
                 viewPager.setCurrentItem(nextItem, true)
             } else {
-                view.findViewById<Button>(R.id.btnNext).setText("Finish")
             }
         }
     }
 
     private fun createOnboardingPages(): List<OnboardingPage> {
         return listOf(
-            OnboardingPage(R.drawable.ic_launcher_background, getString(R.string.app_name)),
-            OnboardingPage(R.drawable.ic_launcher_foreground, getString(R.string.app_name)),
-            OnboardingPage(R.drawable.ic_launcher_foreground, getString(R.string.app_name))
+            OnboardingPage(R.drawable.yoga, getString(R.string.lorem_ipsum)),
+            OnboardingPage(R.drawable.yoga, getString(R.string.lorem_ipsum)),
+            OnboardingPage(R.drawable.yoga, getString(R.string.lorem_ipsum))
         )
     }
 }

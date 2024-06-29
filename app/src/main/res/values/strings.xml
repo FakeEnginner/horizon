@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">horizon</string>
+    <string name="lorem_ipsum">Lorem ipsum dolor sit amet, consectetur \nadipiscing elit, sed do eiusmod tempor\nincididunt ut labore et dolore magna aliqua.</string>
+    <string name="express_you"><b>Express Your \nCreativity</b></string>
 </resources>
