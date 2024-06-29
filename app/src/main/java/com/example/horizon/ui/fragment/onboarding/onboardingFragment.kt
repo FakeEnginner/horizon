@@ -4,19 +4,21 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ImageView
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
 import com.example.horizon.R
+import com.example.horizon.ui.fragment.login.login
 import com.example.horizon.ui.fragment.onboarding.adapter.OnboardingAdapter
 import com.example.horizon.ui.fragment.onboarding.models.OnboardingPage
+import com.example.horizon.utils.Helper
 import com.tbuonomo.viewpagerdotsindicator.DotsIndicator
 
 class onboardingFragment : Fragment() {
 
     private lateinit var viewPager: ViewPager2
     private lateinit var onboardingAdapter: OnboardingAdapter
+    var helper = Helper()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,6 +50,9 @@ class onboardingFragment : Fragment() {
                 viewPager.setCurrentItem(nextItem, true)
             } else {
             }
+        }
+        view.findViewById<ImageView>(R.id.skipedbtn).setOnClickListener{
+            helper.replaceFragment(login(),requireFragmentManager())
         }
     }
 
