@@ -1,5 +1,37 @@
 <resources>
     <string name="app_name">horizon</string>
-    <string name="lorem_ipsum">Lorem ipsum dolor sit amet, consectetur \nadipiscing elit, sed do eiusmod tempor\nincididunt ut labore et dolore magna aliqua.</string>
+    <!-- Strings related to login -->
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="welcome">"Welcome!"</string>
+    <string name="invalid_username">Not a valid username</string>
+    <string name="invalid_password">Password must be >5 characters</string>
+    <string name="login_failed">"Login failed"</string>
+    <string name="welcome_bac">Welcome \nBack!\n</string>
+    <string name="username">Username or Email</string>
+    <string name="password">Password</string>
+    <string name="forgot_pass">Forgot Password?</string>
+    <string name="login">Login</string>
+    <string name="or_continue">- OR Continue with -</string>
+    <string name="create_an_account">Create An Account</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="create_an_a">Create an \naccount</string>
+    <string name="cnf_password">ConfirmPassword</string>
+    <string name="by_clicking">By clicking the Register button, you agree to the public offer</string>
+    <string name="create_acco">Create Account</string>
+    <string name="i_already_h">I Already Have an Account</string>
+    <string name="forgot_password">Forgot\npassword?</string>
+    <string name="we_will_sen">* We will send you a message to set or reset your new password</string>
+    <string name="submit">Submit</string>
+    <string name="home">Home</string>
+    <string name="chat">Chats</string>
+    <string name="community">Community</string>
+    <string name="Experts">Experts</string>
+    <string name="firstname">FirstName</string>
+    <string name="lastname">LastName</string>
     <string name="express_you"><b>Express Your \nCreativity</b></string>
+    <string name="lorem_ipsum">Lorem ipsum dolor sit amet, consectetur \nadipiscing elit, sed do eiusmod tempor\nincididunt ut labore et dolore magna aliqua. Ut enim ad</string>
+    <string name="skip"><b>Skip</b></string>
 </resources>
