@@ -8,12 +8,14 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.example.horizon.R
+import com.example.horizon.databinding.FragmentSignupBinding
 import com.example.horizon.ui.fragment.login.login
 import com.example.horizon.utils.Helper
 
 
 class signup: Fragment() {
     val helper = Helper()
+    lateinit var signupBinding: FragmentSignupBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
     }
