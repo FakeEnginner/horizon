@@ -10,9 +10,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/bottomAppBar"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -21,7 +18,6 @@
         android:id="@+id/dashcnt"
         android:visibility="visible">
 
-        <!-- BottomAppBar with BottomNavigationView -->
         <com.google.android.material.bottomappbar.BottomAppBar
             android:id="@+id/bottomAppBar"
             android:layout_width="match_parent"
@@ -41,12 +37,12 @@
 
         </com.google.android.material.bottomappbar.BottomAppBar>
 
-        <!-- FloatingActionButton anchored to BottomAppBar -->
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/float_icon"
+            android:tooltipText="Add"
             app:layout_anchor="@+id/bottomAppBar" />
 
         <FrameLayout
@@ -59,9 +55,4 @@
             app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
-
-        <!-- Main Container for Fragments -->
-
-        <!-- This FrameLayout should be hidden or removed when not in use -->
-
 </androidx.constraintlayout.widget.ConstraintLayout>
