@@ -6,12 +6,11 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import com.example.horizon.WebViewContainer.Interface.JsInterface
 
-class WebViewInitialize(var context: Context, var baseUrl: String) : WebView(context) {
+class WebViewInitialize(var getcontext: Context, var baseUrl: String) : WebView(getcontext) {
 
     init {
         initWebView(this)
     }
-    @SuppressLint("JavascriptInterface")
     private fun initWebView(webView: WebView){
         settings.apply {
             javaScriptEnabled = true
@@ -28,8 +27,8 @@ class WebViewInitialize(var context: Context, var baseUrl: String) : WebView(con
             allowUniversalAccessFromFileURLs = true
         }
         scrollBarStyle = WebView.SCROLLBARS_OUTSIDE_OVERLAY
-        webViewClient = WebViewClient(context)
-        addJavascriptInterface(JsInterface(context,this),"Native")
+        webViewClient = WebViewClient(getcontext)
+        addJavascriptInterface(JsInterface(getcontext,this),"Native")
         loadUrl(baseUrl)
     }
 }
