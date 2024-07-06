@@ -27,10 +27,11 @@ class Helper {
             .commit()
     }
 
+
     @SuppressLint("SuspiciousIndentation")
     fun replacetoDashboardFragment(fragment: Fragment, fragmentManager: FragmentManager){
         fragmentManager.beginTransaction()
-            .replace(R.id.frameLayout,fragment)
+            .replace(R.id.DashboardContainer,fragment)
             .addToBackStack("null")
             .commit()
     }
@@ -74,6 +75,13 @@ class Helper {
                 ).show()
             }
         }
+    }
+     fun addFrameLayout(container: FrameLayout) {
+        container.addView(frameLayout)
+    }
+
+     fun removeFrameLayout(container: FrameLayout) {
+        container.removeView(frameLayout)
     }
 }
 

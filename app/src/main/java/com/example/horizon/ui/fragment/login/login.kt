@@ -1,6 +1,7 @@
 package com.example.horizon.ui.fragment.login
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,8 +9,11 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import com.example.horizon.Interface.FrameLayoutChanger
+import com.example.horizon.MainActivity
 import com.example.horizon.R
 import com.example.horizon.databinding.FragmentLoginBinding
+import com.example.horizon.ui.fragment.dashboard.Dashboard
 import com.example.horizon.ui.fragment.forgetpassword.ForgotPassword
 import com.example.horizon.ui.fragment.signup.signup
 import com.example.horizon.utils.Helper
@@ -17,6 +21,10 @@ import com.example.horizon.utils.Helper
 class login : Fragment(){
     val helper = Helper()
     lateinit var binding: FragmentLoginBinding
+    private var frameLayoutChanger: FrameLayoutChanger? = null
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
     }
@@ -37,6 +45,12 @@ class login : Fragment(){
         }
         forgotpassword.setOnClickListener {
             helper?.replaceFragment(ForgotPassword(),requireFragmentManager())
+        }
+        loginbtn.setOnClickListener {
+            frameLayoutChanger?.replaceFrameLayout()
+            helper?.replacetoDashboardFragment(Dashboard(),requireFragmentManager())
+            (requireActivity() as MainActivity).showDashboardContainer()
+
         }
         return view
     }
