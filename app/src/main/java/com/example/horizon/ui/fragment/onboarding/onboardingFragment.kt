@@ -8,6 +8,7 @@ import android.widget.ImageView
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
 import com.example.horizon.R
+import com.example.horizon.databinding.FragmentOnboardingBinding
 import com.example.horizon.ui.fragment.login.login
 import com.example.horizon.ui.fragment.onboarding.adapter.OnboardingAdapter
 import com.example.horizon.ui.fragment.onboarding.models.OnboardingPage
@@ -18,6 +19,7 @@ class onboardingFragment : Fragment() {
 
     private lateinit var viewPager: ViewPager2
     private lateinit var onboardingAdapter: OnboardingAdapter
+    lateinit var onboardingBinding: FragmentOnboardingBinding
     var helper = Helper()
 
     override fun onCreateView(
