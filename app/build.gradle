@@ -87,5 +87,8 @@ dependencies {
     kapt "androidx.room:room-compiler:2.5.1"
     // Optional - Room Kotlin Extensions and Coroutines support
     implementation "androidx.room:room-ktx:2.5.1"
+    //ViewModel
+    implementation "androidx.lifecycle:lifecycle-extensions:$rootProject.extensionVersion"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$rootProject.lifecycleVersion"
 
 }
