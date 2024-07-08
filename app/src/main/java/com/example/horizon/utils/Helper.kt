@@ -41,6 +41,10 @@ class Helper {
     fun hideFrameLayout() {
         frameLayout.visibility = FrameLayout.INVISIBLE
     }
+
+    /*
+    * firebase remote config implementation
+    * */
     fun firebaseConfig(context: Context){
         val remoteConfig: FirebaseRemoteConfig = Firebase.remoteConfig
         val configSettings = remoteConfigSettings {
