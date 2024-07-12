@@ -23,7 +23,7 @@ class Helper {
     fun replaceFragment(fragment: Fragment, fragmentManager: FragmentManager) {
         fragmentManager.beginTransaction()
             .replace(R.id.frameLayout, fragment)
-            .addToBackStack(null)
+            .addToBackStack("null")
             .commit()
     }
 
