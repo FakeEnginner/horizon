@@ -1,20 +1,30 @@
 package com.example.horizon
 
+import android.content.Context
+import android.content.res.Resources.Theme
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
-import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.lifecycle.ViewModel
 import com.example.horizon.Interface.FrameLayoutChanger
 import com.example.horizon.databinding.ActivityMainBinding
+import com.example.horizon.factory.OnBoardingCheckViewModelFactory
+import com.example.horizon.model.onBoardingCheck
 import com.example.horizon.privacy.DeveloperOption
 import com.example.horizon.privacy.Rooted
 import com.example.horizon.ui.fragment.onboarding.onboardingFragment
 import com.example.horizon.utils.Helper
 import com.example.horizon.utils.Internet_connectivity
+import com.example.horizon.viewModel.OnBoardingCheckViewModel
 import timber.log.Timber
+import androidx.activity.viewModels
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.example.horizon.Interface.mainFrameChange
+import com.example.horizon.ui.fragment.login.login
 
-class MainActivity : AppCompatActivity() , FrameLayoutChanger{
+
+class MainActivity : AppCompatActivity() , FrameLayoutChanger, mainFrameChange {
     lateinit var binding: ActivityMainBinding
     private lateinit var frameLayout: FrameLayout
     private lateinit var dashboardContainer : FrameLayout
@@ -22,19 +32,47 @@ class MainActivity : AppCompatActivity() , FrameLayoutChanger{
     var developerOption: DeveloperOption = DeveloperOption()
     var helper = Helper()
 
+    private val onBoardingCheckViewModel: OnBoardingCheckViewModel by viewModels  {
+        OnBoardingCheckViewModelFactory((application as MyApplication).database)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Thread.sleep(3000)
+        installSplashScreen()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        /*
+        * for handle visibilty of of dashboard and framelayout
+        * */
         handleVisibilty()
+
         val developerOptionsEnabled =developerOption.isDeveloperOptionsEnabled(applicationContext)
+        //insert onBoardingCheck
+
+       val onBoardingCheck = onBoardingCheck(onBoardingCheck = false)
+        onBoardingCheckViewModel.getOnBoardingCheckById(0){
+            if(it == null){
+                onBoardingCheckViewModel.insertOnBoardingCheck(onBoardingCheck)
+                helper.replaceFragment(onboardingFragment(),supportFragmentManager)
+            }else{
+                onBoardingCheckViewModel.isOnBoardingChecked(0) { isChecked ->
+                    if(isChecked){
+                        helper.replaceFragment(login(),supportFragmentManager)
+                    }
+                    else {
+                        helper.replaceFragment(onboardingFragment(),supportFragmentManager)
+                    }
+                }
+            }
+        }
         //root check condition
         if(!rooted_.isRootedDevice()){
             //Developer option check
             Timber.tag("developer_option").e("${developerOptionsEnabled}")
             if(developerOptionsEnabled) {
                 Timber.tag("Developeroption").e("Developer option is On")
-                helper.replaceFragment(onboardingFragment(),supportFragmentManager)
+
             }
             else{
                 Timber.tag("Developeroption").e("Developer option is Off")
@@ -59,15 +97,25 @@ class MainActivity : AppCompatActivity() , FrameLayoutChanger{
         binding.frameLayout.visibility = View.VISIBLE
     }
 
+    /*
+    * for replacing fragment (from layout visibility gone)
+    * function override bcz of interface is implemented
+    */
     override fun replaceFrameLayout() {
-        binding.frameLayout.visibility = View.GONE
-        binding.dashcnt.visibility = View.VISIBLE
-        binding.DashboardContainer.visibility = View.VISIBLE
+        frameChange()
     }
     fun showDashboardContainer() {
-        // Show DashboardContainer and hide frameLayout
-        binding.frameLayout.visibility = View.GONE
-        binding.dashcnt.visibility = View.VISIBLE
-        binding.DashboardContainer.visibility = View.VISIBLE
+        frameChange()
+    }
+
+   fun  frameChange(){
+       binding.frameLayout.visibility = View.GONE
+       binding.dashcnt.visibility = View.VISIBLE
+       binding.DashboardContainer.visibility = View.VISIBLE
+    }
+    override fun mainFrameChange() {
+        binding.frameLayout.visibility = View.VISIBLE
+        binding.dashcnt.visibility = View.GONE
+        binding.DashboardContainer.visibility = View.GONE
     }
 }
