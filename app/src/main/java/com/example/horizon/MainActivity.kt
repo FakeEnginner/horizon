@@ -1,5 +1,6 @@
 package com.example.horizon
 
+import android.content.Context
 import android.content.res.Resources.Theme
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -19,9 +20,11 @@ import com.example.horizon.viewModel.OnBoardingCheckViewModel
 import timber.log.Timber
 import androidx.activity.viewModels
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.example.horizon.Interface.mainFrameChange
+import com.example.horizon.ui.fragment.login.login
 
 
-class MainActivity : AppCompatActivity() , FrameLayoutChanger{
+class MainActivity : AppCompatActivity() , FrameLayoutChanger, mainFrameChange {
     lateinit var binding: ActivityMainBinding
     private lateinit var frameLayout: FrameLayout
     private lateinit var dashboardContainer : FrameLayout
@@ -43,16 +46,24 @@ class MainActivity : AppCompatActivity() , FrameLayoutChanger{
         * for handle visibilty of of dashboard and framelayout
         * */
         handleVisibilty()
+
         val developerOptionsEnabled =developerOption.isDeveloperOptionsEnabled(applicationContext)
+        //insert onBoardingCheck
 
-       val onBoardingCheck = onBoardingCheck(onBoardingCheck = true)
-        onBoardingCheckViewModel.insertOnBoardingCheck(onBoardingCheck)
-        onBoardingCheckViewModel.isOnBoardingChecked(0) { isChecked ->
-            if(isChecked){
-
-            }
-            else {
-
+       val onBoardingCheck = onBoardingCheck(onBoardingCheck = false)
+        onBoardingCheckViewModel.getOnBoardingCheckById(0){
+            if(it == null){
+                onBoardingCheckViewModel.insertOnBoardingCheck(onBoardingCheck)
+                helper.replaceFragment(onboardingFragment(),supportFragmentManager)
+            }else{
+                onBoardingCheckViewModel.isOnBoardingChecked(0) { isChecked ->
+                    if(isChecked){
+                        helper.replaceFragment(login(),supportFragmentManager)
+                    }
+                    else {
+                        helper.replaceFragment(onboardingFragment(),supportFragmentManager)
+                    }
+                }
             }
         }
         //root check condition
@@ -61,7 +72,7 @@ class MainActivity : AppCompatActivity() , FrameLayoutChanger{
             Timber.tag("developer_option").e("${developerOptionsEnabled}")
             if(developerOptionsEnabled) {
                 Timber.tag("Developeroption").e("Developer option is On")
-                helper.replaceFragment(onboardingFragment(),supportFragmentManager)
+
             }
             else{
                 Timber.tag("Developeroption").e("Developer option is Off")
@@ -101,5 +112,10 @@ class MainActivity : AppCompatActivity() , FrameLayoutChanger{
        binding.frameLayout.visibility = View.GONE
        binding.dashcnt.visibility = View.VISIBLE
        binding.DashboardContainer.visibility = View.VISIBLE
+    }
+    override fun mainFrameChange() {
+        binding.frameLayout.visibility = View.VISIBLE
+        binding.dashcnt.visibility = View.GONE
+        binding.DashboardContainer.visibility = View.GONE
     }
 }
