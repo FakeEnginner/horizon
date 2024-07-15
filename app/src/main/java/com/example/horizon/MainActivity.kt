@@ -22,6 +22,7 @@ import androidx.activity.viewModels
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.horizon.Interface.mainFrameChange
 import com.example.horizon.ui.fragment.login.login
+import com.example.horizon.utils.firebaseConfig
 
 
 class MainActivity : AppCompatActivity() , FrameLayoutChanger, mainFrameChange {
@@ -31,6 +32,7 @@ class MainActivity : AppCompatActivity() , FrameLayoutChanger, mainFrameChange {
     var rooted_ = Rooted()
     var developerOption: DeveloperOption = DeveloperOption()
     var helper = Helper()
+    var firebaseConfig = firebaseConfig()
 
     private val onBoardingCheckViewModel: OnBoardingCheckViewModel by viewModels  {
         OnBoardingCheckViewModelFactory((application as MyApplication).database)
@@ -38,10 +40,12 @@ class MainActivity : AppCompatActivity() , FrameLayoutChanger, mainFrameChange {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Thread.sleep(3000)
+//        Thread.sleep(3000)
         installSplashScreen()
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         /*
         * for handle visibilty of of dashboard and framelayout
         * */
