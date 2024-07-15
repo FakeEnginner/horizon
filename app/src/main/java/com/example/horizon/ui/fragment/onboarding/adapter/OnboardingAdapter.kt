@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.horizon.R
 import com.example.horizon.ui.fragment.onboarding.models.OnboardingPage
-import com.squareup.picasso.Picasso
 
 class OnboardingAdapter(private val onboardingPages: List<OnboardingPage>) :
     RecyclerView.Adapter<OnboardingAdapter.OnboardingViewHolder>() {
