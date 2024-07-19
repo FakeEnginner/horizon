@@ -1,6 +1,8 @@
 package com.example.horizon.ui.fragment.dashboard
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,6 +26,15 @@ class Dashboard: Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: bannerAdapter
     val helper = Helper()
+    private val handler = Handler(Looper.getMainLooper())
+    private val scrollRunnable = object : Runnable {
+        override fun run() {
+            val currentPosition = (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+            val nextPosition = if (currentPosition == adapter.itemCount - 1) 0 else currentPosition + 1
+            recyclerView.smoothScrollToPosition(nextPosition)
+            handler.postDelayed(this, 3000)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -63,6 +74,13 @@ class Dashboard: Fragment() {
             bannerModel(3, "Item 3", "https://example.com/image3.jpg")
         )
         adapter.submitList(items)
+        handler.postDelayed(scrollRunnable, 3000)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // Remove callbacks to prevent memory leaks
+        handler.removeCallbacks(scrollRunnable)
     }
 
     fun mainFrameChange() {
