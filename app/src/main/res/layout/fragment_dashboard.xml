@@ -124,7 +124,7 @@
            <include
                 android:layout_width="match_parent"
                android:layout_height="70dp"
-              layout="@layout/item_myprogress">
+               layout="@layout/item_myprogress">
            </include>
 
             <LinearLayout
@@ -153,6 +153,45 @@
                 android:clipToPadding="false"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
 
+            <include
+                android:layout_width="match_parent"
+                android:layout_height="70dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                layout="@layout/item_help_breath">
+            </include>
+
+            <include
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                layout="@layout/item_system_reset">
+            </include>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/diary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Personal Diary"
+                    android:textStyle="bold"
+                    android:textColor="@color/dark_blue"
+                    android:textSize="16sp"/>
+
+                <TextView
+                    android:id="@+id/viewAllDiary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="View all"
+                    android:textSize="14sp"
+                    android:textColor="@color/dark_blue"/>
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>
