@@ -17,8 +17,10 @@ import com.example.horizon.databinding.FragmentDashboardBinding
 import com.example.horizon.databinding.FragmentForgetBinding
 import com.example.horizon.model.bannerModel
 import com.example.horizon.model.blogModel
+import com.example.horizon.model.trendeningModel
 import com.example.horizon.ui.fragment.dashboard.adapter.bannerAdapter
 import com.example.horizon.ui.fragment.dashboard.adapter.blogAdapter
+import com.example.horizon.ui.fragment.dashboard.adapter.trendeningAdapter
 import com.example.horizon.ui.fragment.login.login
 import com.example.horizon.utils.Helper
 
@@ -28,6 +30,7 @@ class Dashboard: Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var bannerAdapter: bannerAdapter
     private lateinit var blogAdapter: blogAdapter
+    private lateinit var trendingAdapter: trendeningAdapter
 
     val helper = Helper()
     private val handler = Handler(Looper.getMainLooper())
@@ -67,6 +70,7 @@ class Dashboard: Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupBannerRecyclerView()
         setupBlogsRecyclerView()
+        setupTrendingRecyclerView()
     }
     private fun setupBannerRecyclerView() {
         recyclerView = binding.banner
@@ -100,6 +104,28 @@ class Dashboard: Fragment() {
 
         )
         blogAdapter.submitList(items)
+    }
+
+    private fun setupTrendingRecyclerView(){
+        val trendeningRecyclerView = binding.trendingrcy
+        trendeningRecyclerView.layoutManager =
+            LinearLayoutManager(context,LinearLayoutManager.HORIZONTAL,false)
+        trendingAdapter = trendeningAdapter()
+        trendeningRecyclerView.adapter = trendingAdapter
+        val items = listOf(
+            trendeningModel(1, "Item 1", "https://example.com/image1.jpg"),
+            trendeningModel(2, "Item 2", "https://example.com/image2.jpg"),
+            trendeningModel(3, "Item 3", "https://example.com/image3.jpg"),
+            trendeningModel(4, "Item 3", "https://example.com/image3.jpg"),
+            trendeningModel(1, "Item 1", "https://example.com/image1.jpg"),
+            trendeningModel(2, "Item 2", "https://example.com/image2.jpg"),
+            trendeningModel(3, "Item 3", "https://example.com/image3.jpg"),
+            trendeningModel(4, "Item 3", "https://example.com/image3.jpg")
+
+        )
+        trendingAdapter.submitList(items)
+
+
     }
     override fun onDestroyView() {
         super.onDestroyView()
