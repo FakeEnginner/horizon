@@ -89,8 +89,9 @@
         android:layout_alignParentLeft="true"
         android:layout_marginLeft="225dp"
         android:layout_alignParentTop="true"
-        android:layout_marginTop="15dp"
+        android:layout_marginTop="10dp"
         android:text="@string/forgot_pass"
+        android:textColor="@color/dark_blue"
         android:textAppearance="@style/forgot_pass"
         android:gravity="center_horizontal|top"
         />
@@ -101,7 +102,7 @@
         android:layout_marginLeft="10dp"
         android:layout_marginRight="10dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="30dp">
+        android:layout_marginTop="9dp">
 
         <ImageView
             android:layout_width="wrap_content"
@@ -182,6 +183,7 @@
             android:id="@+id/sign_uplogin"
             android:layout_width="57dp"
             android:layout_height="17dp"
+            android:textColor="@color/dark_blue"
             android:text="@string/sign_up"
             android:textAppearance="@style/sign_up"
             android:gravity="center_horizontal|center_vertical"

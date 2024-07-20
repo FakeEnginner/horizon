@@ -18,7 +18,7 @@
         <path
             android:pathData="M27 0C41.9117 0 54 12.0883 54 27C54 41.9117 41.9117 54 27 54C12.0883 54 0 41.9117 0 27C0 12.0883 12.0883 0 27 0Z"
             android:strokeWidth="2"
-            android:strokeColor="#F83758"
+            android:strokeColor="@color/dark_blue"
             />
     </group>
 </vector>
