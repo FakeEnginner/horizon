@@ -31,8 +31,8 @@
                 android:id="@+id/bottomNavigationView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginEnd="16dp"
                 android:background="@android:color/transparent"
+                android:layout_marginEnd="16dp"
                 app:menu="@menu/bottom_navigation_menu" />
 
         </com.google.android.material.bottomappbar.BottomAppBar>
@@ -48,7 +48,7 @@
         <FrameLayout
             android:id="@+id/DashboardContainer"
             android:layout_width="match_parent"
-            android:layout_height="627dp"
+            android:layout_height="672dp"
             app:layout_constraintBottom_toTopOf="@id/bottomAppBar"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

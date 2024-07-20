@@ -1,0 +1,17 @@
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="70dp"
+    android:layout_margin="24px"
+    android:background="@drawable/banner_background">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="My Progress"
+        android:textAlignment="center"
+        android:gravity="center"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

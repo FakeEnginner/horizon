@@ -10,7 +10,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         tools:layout_editor_absoluteX="101dp"
-        tools:layout_editor_absoluteY="109dp"></androidx.viewpager2.widget.ViewPager2>
+        tools:layout_editor_absoluteY="109dp">
+    </androidx.viewpager2.widget.ViewPager2>
 
     <com.tbuonomo.viewpagerdotsindicator.DotsIndicator
         android:id="@+id/dots_indicator"
@@ -28,7 +29,7 @@
         app:dotsSpacing="4dp"
         app:dotsWidthFactor="2.5"
         app:progressMode="true"
-        app:selectedDotColor="#F65927" />
+        app:selectedDotColor="@color/dark_blue" />
 
     <ImageView
         android:id="@+id/btnNext"
