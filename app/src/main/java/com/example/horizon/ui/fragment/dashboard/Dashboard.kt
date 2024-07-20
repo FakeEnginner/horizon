@@ -37,8 +37,8 @@ class Dashboard: Fragment() {
     private val scrollRunnable = object : Runnable {
         override fun run() {
             val currentPosition = (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
-            val nextPosition = if (currentPosition == bannerAdapter.itemCount - 1) 0 else currentPosition + 1
-            recyclerView.smoothScrollToPosition(nextPosition)
+            val bannerPosition = if (currentPosition == bannerAdapter.itemCount - 1) 0 else currentPosition + 1
+            recyclerView.smoothScrollToPosition(bannerPosition)
             handler.postDelayed(this, 3000)
         }
     }
@@ -124,8 +124,6 @@ class Dashboard: Fragment() {
 
         )
         trendingAdapter.submitList(items)
-
-
     }
     override fun onDestroyView() {
         super.onDestroyView()
