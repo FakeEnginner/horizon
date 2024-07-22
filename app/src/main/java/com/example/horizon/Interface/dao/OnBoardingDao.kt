@@ -1,4 +1,4 @@
-package com.example.horizon.Interface
+package com.example.horizon.Interface.dao
 
 import androidx.room.Dao
 import androidx.room.Insert

@@ -2,7 +2,6 @@ package com.example.horizon.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.horizon.Interface.onBoardingDao
 import com.example.horizon.model.Database.AppDatabase
 import com.example.horizon.model.onBoardingCheck
 import kotlinx.coroutines.launch

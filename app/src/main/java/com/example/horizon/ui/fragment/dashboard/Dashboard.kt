@@ -21,6 +21,7 @@ import com.example.horizon.model.trendeningModel
 import com.example.horizon.ui.fragment.dashboard.adapter.bannerAdapter
 import com.example.horizon.ui.fragment.dashboard.adapter.blogAdapter
 import com.example.horizon.ui.fragment.dashboard.adapter.trendeningAdapter
+import com.example.horizon.ui.fragment.diary.diaryHandler
 import com.example.horizon.ui.fragment.login.login
 import com.example.horizon.utils.Helper
 
@@ -49,6 +50,9 @@ class Dashboard: Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         binding = FragmentDashboardBinding.inflate(layoutInflater, container, false)
+        binding.viewAllDiary.setOnClickListener {
+            helper.replacetoDashboardFragment(diaryHandler(),requireFragmentManager())
+        }
         return binding.root
     }
 
