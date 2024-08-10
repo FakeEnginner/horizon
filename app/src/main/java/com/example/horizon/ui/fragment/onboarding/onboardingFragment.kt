@@ -7,17 +7,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import androidx.activity.viewModels
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
 import com.example.horizon.Interface.OnboardingDataListener
-import com.example.horizon.Interface.onBoardingDao
+import com.example.horizon.Interface.dao.onBoardingDao
 import com.example.horizon.MyApplication
 import com.example.horizon.R
 import com.example.horizon.databinding.FragmentOnboardingBinding
 import com.example.horizon.factory.OnBoardingCheckViewModelFactory
-import com.example.horizon.model.Database.AppDatabase
 import com.example.horizon.model.onBoardingCheck
 import com.example.horizon.ui.fragment.login.login
 import com.example.horizon.ui.fragment.onboarding.adapter.OnboardingAdapter
@@ -27,7 +25,6 @@ import com.example.horizon.utils.firebaseConfig
 import com.example.horizon.viewModel.OnBoardingCheckViewModel
 import com.google.gson.Gson
 import com.tbuonomo.viewpagerdotsindicator.DotsIndicator
-import org.json.JSONArray
 import org.json.JSONObject
 
 class onboardingFragment : Fragment(), OnboardingDataListener {

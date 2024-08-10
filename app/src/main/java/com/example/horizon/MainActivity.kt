@@ -16,13 +16,13 @@ import com.example.horizon.privacy.Rooted
 import com.example.horizon.ui.fragment.onboarding.onboardingFragment
 import com.example.horizon.utils.Helper
 import com.example.horizon.utils.Internet_connectivity
-import com.example.horizon.viewModel.OnBoardingCheckViewModel
 import timber.log.Timber
 import androidx.activity.viewModels
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.horizon.Interface.mainFrameChange
 import com.example.horizon.ui.fragment.login.login
 import com.example.horizon.utils.firebaseConfig
+import com.example.horizon.viewModel.OnBoardingCheckViewModel
 
 
 class MainActivity : AppCompatActivity() , FrameLayoutChanger, mainFrameChange {
@@ -37,6 +37,12 @@ class MainActivity : AppCompatActivity() , FrameLayoutChanger, mainFrameChange {
     private val onBoardingCheckViewModel: OnBoardingCheckViewModel by viewModels  {
         OnBoardingCheckViewModelFactory((application as MyApplication).database)
     }
+
+//    diaryViewModel = ViewModelProvider(this).get(DiaryViewModel::class.java)
+//
+//    diaryViewModel.allDiaries.observe(this, Observer { diaries ->
+//        // Update UI with diary list
+//    })
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -110,6 +116,17 @@ class MainActivity : AppCompatActivity() , FrameLayoutChanger, mainFrameChange {
     }
     fun showDashboardContainer() {
         frameChange()
+    }
+    override fun onBackPressed() {
+        if (shouldExitApp()) {
+            finishAffinity()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    private fun shouldExitApp(): Boolean {
+        return isTaskRoot && supportFragmentManager.backStackEntryCount == 0
     }
 
    fun  frameChange(){

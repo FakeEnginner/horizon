@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.horizon.Interface.onBoardingDao
+import com.example.horizon.Interface.dao.onBoardingDao
 import com.example.horizon.model.onBoardingCheck
 
 @Database(entities = [onBoardingCheck::class], version = 1)
