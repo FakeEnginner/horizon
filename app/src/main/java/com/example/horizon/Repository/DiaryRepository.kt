@@ -26,4 +26,7 @@ class DiaryRepository(private val diaryDao: DiaryDao) : ViewModel() {
     fun getDiaryById(id: Int): LiveData<diary> {
         return diaryDao.getDiaryById(id)
     }
+    fun searchDiaries(query: String): LiveData<List<diary>> {
+        return diaryDao.searchDiaries("%$query%")
+    }
 }
