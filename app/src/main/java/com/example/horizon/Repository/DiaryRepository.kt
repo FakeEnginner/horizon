@@ -23,4 +23,7 @@ class DiaryRepository(private val diaryDao: DiaryDao) : ViewModel() {
             diaryDao.deleteDiary(diary)
         }
     }
+    fun getDiaryById(id: Int): LiveData<diary> {
+        return diaryDao.getDiaryById(id)
+    }
 }

@@ -12,13 +12,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.example.horizon.Interface.mainFrameChange
 import com.example.horizon.databinding.FragmentDiaryBinding
+import com.example.horizon.model.entities.diary
 import com.example.horizon.ui.fragment.dashboard.Dashboard
 import com.example.horizon.ui.fragment.diary.adapter.diaryAdapter
 import com.example.horizon.utils.Helper
 import com.example.horizon.viewmodel.DiaryViewModel
 
 
-class diaryHandler :Fragment() {
+class diaryHandler :Fragment(), diaryAdapter.OnItemClickListener {
 
     private lateinit var fragmentDiaryBinding: FragmentDiaryBinding
     private var mainFrameChange: mainFrameChange? = null
@@ -36,7 +37,7 @@ class diaryHandler :Fragment() {
        fragmentDiaryBinding = FragmentDiaryBinding.inflate(layoutInflater,container,false)
 
         val recyclerView = fragmentDiaryBinding.diaryRecyclerView
-        diaryAdapter = diaryAdapter()
+        diaryAdapter = diaryAdapter(this)
         recyclerView.adapter = diaryAdapter
 //        recyclerView.layoutManager = LinearLayoutManager(context)
         val staggeredGridLayoutManager =
@@ -68,6 +69,15 @@ class diaryHandler :Fragment() {
     }
     fun mainFrameChange() {
         mainFrameChange?.mainFrameChange()
+    }
+
+   override fun onItemClick(diary: diary) {
+        val fragment = NewDiaryHandler().apply {
+            arguments = Bundle().apply {
+                putInt("DIARY_ID", diary.id)
+            }
+        }
+        helper.replacetoDashboardFragment(fragment, requireFragmentManager())
     }
 
 }

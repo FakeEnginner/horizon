@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.horizon.R
 import com.example.horizon.model.entities.diary
 
-class diaryAdapter : RecyclerView.Adapter<diaryAdapter.DiaryViewHolder>() {
+class diaryAdapter(private val listener: OnItemClickListener) : RecyclerView.Adapter<diaryAdapter.DiaryViewHolder>() {
 
     private var diaryList = emptyList<diary>()
 
@@ -29,15 +29,27 @@ class diaryAdapter : RecyclerView.Adapter<diaryAdapter.DiaryViewHolder>() {
         notifyDataSetChanged()
     }
 
-    class DiaryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class DiaryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val titleTextView: TextView = itemView.findViewById(R.id.textTitle)
         private val subtitleTextView: TextView = itemView.findViewById(R.id.textSubtitle)
         private val dateTimeTextView: TextView = itemView.findViewById(R.id.textDateTime)
+
+        init {
+            itemView.setOnClickListener {
+                val position = adapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    listener.onItemClick(diaryList[position])
+                }
+            }
+        }
 
         fun bind(diary: diary) {
             titleTextView.text = diary.title
             subtitleTextView.text = diary.subtitle
             dateTimeTextView.text = diary.dateTime
         }
+    }
+    interface OnItemClickListener {
+        fun onItemClick(diary: diary)
     }
 }
