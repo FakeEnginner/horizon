@@ -27,4 +27,7 @@ class DiaryViewModel(application: Application) : AndroidViewModel(application) {
     fun delete(diary: diary) = viewModelScope.launch {
         repository.delete(diary)
     }
+    fun getDiaryById(id: Int): LiveData<diary> {
+        return repository.getDiaryById(id)
+    }
 }

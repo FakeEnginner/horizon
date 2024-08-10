@@ -17,4 +17,7 @@ interface DiaryDao {
     fun insertDiary(Diary : diary)
     @Delete
     fun deleteDiary(Diary : diary)
+    @Query("SELECT * FROM diary WHERE id = :id")
+    fun getDiaryById(id: Int): LiveData<diary>
+
 }

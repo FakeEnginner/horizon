@@ -2,6 +2,7 @@ package com.example.horizon.ui.fragment.diary
 
 import android.icu.text.SimpleDateFormat
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -34,11 +35,26 @@ class NewDiaryHandler : Fragment(){
     ): View? {
         createDiaryBinding = FragmentCreateDiaryBinding.inflate(layoutInflater,container,false)
         diaryViewModel = ViewModelProvider(this).get(DiaryViewModel::class.java)
+
+        val diaryId = arguments?.getInt("DIARY_ID")
+        Log.d("NewDiaryHandler", "Received Diary ID: $diaryId")
+        if (diaryId != null) {
+            diaryViewModel.getDiaryById(diaryId).observe(viewLifecycleOwner, Observer { diary ->
+                diary?.let {
+                    createDiaryBinding.inputdiaryTitle.setText(diary.title)
+                    createDiaryBinding.inputdiarySubtitle.setText(diary.subtitle)
+                    createDiaryBinding.inputNote.setText(diary.noteText)
+                    createDiaryBinding.textDateTime.setText(diary.dateTime)
+                }
+            })
+        }
+
         createDiaryBinding.imageback.setOnClickListener {
             navigateToDashboard()
         }
         createDiaryBinding.imagesave.setOnClickListener {
             setDiary()
+            helper?.replacetoDashboardFragment(diaryHandler(),requireFragmentManager());
         }
         val formatter = createSimpleDateFormatter("yyyy-MM-dd HH:mm:ss")
         val currentDate = Date()
