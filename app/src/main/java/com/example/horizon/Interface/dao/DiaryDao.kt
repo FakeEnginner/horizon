@@ -1,5 +1,6 @@
 package com.example.horizon.Interface.dao
 
+import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -11,7 +12,7 @@ import com.example.horizon.model.entities.diary
 interface DiaryDao {
 
     @Query("SELECT * FROM diary ORDER BY id DESC")
-    fun getAllDiaries(): List<diary>
+    fun getAllDiaries(): LiveData<List<diary>>
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertDiary(Diary : diary)
     @Delete
