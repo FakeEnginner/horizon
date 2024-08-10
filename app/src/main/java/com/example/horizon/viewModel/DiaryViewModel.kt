@@ -30,4 +30,7 @@ class DiaryViewModel(application: Application) : AndroidViewModel(application) {
     fun getDiaryById(id: Int): LiveData<diary> {
         return repository.getDiaryById(id)
     }
+    fun searchDiaries(query: String): LiveData<List<diary>> {
+        return repository.searchDiaries(query)
+    }
 }

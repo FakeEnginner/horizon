@@ -19,5 +19,7 @@ interface DiaryDao {
     fun deleteDiary(Diary : diary)
     @Query("SELECT * FROM diary WHERE id = :id")
     fun getDiaryById(id: Int): LiveData<diary>
+    @Query("SELECT * FROM diary WHERE title LIKE :query OR subtitle LIKE :query")
+    fun searchDiaries(query: String): LiveData<List<diary>>
 
 }

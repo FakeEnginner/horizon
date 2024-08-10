@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
+import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -44,13 +45,24 @@ class diaryHandler :Fragment(), diaryAdapter.OnItemClickListener {
             StaggeredGridLayoutManager(2, LinearLayoutManager.VERTICAL)
         recyclerView.layoutManager = staggeredGridLayoutManager
         diaryViewModel = ViewModelProvider(this).get(DiaryViewModel::class.java)
+
+        // get all diary from database
         diaryViewModel.allDiaries.observe(viewLifecycleOwner, Observer { diaries ->
             diaries?.let {
                 diaryAdapter.setDiaries(it)
             }
         })
+        //search functionality
+        fragmentDiaryBinding.editTextText.addTextChangedListener { text ->
+            val query = text.toString()
+            diaryViewModel.searchDiaries(query).observe(viewLifecycleOwner, Observer { diaries ->
+                diaries?.let {
+                    diaryAdapter.setDiaries(it)
+                }
+            })
+        }
 
-
+        //add new diary
         fragmentDiaryBinding.fab.setOnClickListener {
             mainFrameChange()
             helper.replacetoDashboardFragment(NewDiaryHandler(),requireFragmentManager())
