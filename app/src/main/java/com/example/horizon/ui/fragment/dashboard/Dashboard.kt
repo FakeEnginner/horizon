@@ -8,30 +8,36 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-
 import com.example.horizon.Interface.mainFrameChange
-import com.example.horizon.R
+import androidx.lifecycle.Observer
 import com.example.horizon.databinding.FragmentDashboardBinding
-import com.example.horizon.databinding.FragmentForgetBinding
 import com.example.horizon.model.bannerModel
 import com.example.horizon.model.blogModel
+import com.example.horizon.model.entities.diary
 import com.example.horizon.model.trendeningModel
 import com.example.horizon.ui.fragment.dashboard.adapter.bannerAdapter
 import com.example.horizon.ui.fragment.dashboard.adapter.blogAdapter
 import com.example.horizon.ui.fragment.dashboard.adapter.trendeningAdapter
+import com.example.horizon.ui.fragment.diary.NewDiaryHandler
+import com.example.horizon.ui.fragment.diary.adapter.diaryAdapter
 import com.example.horizon.ui.fragment.diary.diaryHandler
 import com.example.horizon.ui.fragment.login.login
 import com.example.horizon.utils.Helper
+import com.example.horizon.viewmodel.DiaryViewModel
 
-class Dashboard: Fragment() {
+class Dashboard: Fragment() ,diaryAdapter.OnItemClickListener{
     private var mainFrameChange: mainFrameChange? = null
     private lateinit var  binding : FragmentDashboardBinding
     private lateinit var recyclerView: RecyclerView
     private lateinit var bannerAdapter: bannerAdapter
     private lateinit var blogAdapter: blogAdapter
     private lateinit var trendingAdapter: trendeningAdapter
+    private lateinit var diaryAdapter: diaryAdapter
+    private lateinit var diaryViewModel: DiaryViewModel
+
 
     val helper = Helper()
     private val handler = Handler(Looper.getMainLooper())
@@ -72,10 +78,16 @@ class Dashboard: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        initRecyclerViewHandler()
+    }
+
+    fun initRecyclerViewHandler(){
         setupBannerRecyclerView()
         setupBlogsRecyclerView()
         setupTrendingRecyclerView()
+        setupDiaryRecylerView()
     }
+
     private fun setupBannerRecyclerView() {
         recyclerView = binding.banner
         recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
@@ -88,6 +100,19 @@ class Dashboard: Fragment() {
         )
         bannerAdapter.submitList(items)
         handler.postDelayed(scrollRunnable, 3000)
+    }
+
+    private fun setupDiaryRecylerView(){
+        recyclerView = binding.diaryRecyclerView
+        recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+        diaryAdapter = diaryAdapter(this)
+        recyclerView.adapter = diaryAdapter
+        diaryViewModel = ViewModelProvider(this).get(DiaryViewModel::class.java)
+        diaryViewModel.allDiaries.observe(viewLifecycleOwner, Observer { diaries ->
+            diaries?.let {
+                diaryAdapter.setDiaries(it)
+            }
+        })
     }
 
     private fun setupBlogsRecyclerView() {
@@ -125,7 +150,6 @@ class Dashboard: Fragment() {
             trendeningModel(2, "Item 2", "https://example.com/image2.jpg"),
             trendeningModel(3, "Item 3", "https://example.com/image3.jpg"),
             trendeningModel(4, "Item 3", "https://example.com/image3.jpg")
-
         )
         trendingAdapter.submitList(items)
     }
@@ -138,5 +162,12 @@ class Dashboard: Fragment() {
         mainFrameChange?.mainFrameChange()
     }
 
-
+    override fun onItemClick(diary: diary) {
+        val fragment = NewDiaryHandler().apply {
+            arguments = Bundle().apply {
+                putInt("DIARY_ID", diary.id)
+            }
+        }
+        helper.replacetoDashboardFragment(fragment, requireActivity().supportFragmentManager)
+    }
 }
