@@ -3,17 +3,25 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/white"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <ScrollView
-        android:scrollbars="none"
+    <include
+        android:id="@+id/header_main"
+        layout="@layout/layout_header"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <ScrollView
+        android:layout_width="411dp"
+        android:layout_height="669dp"
+        android:scrollbars="none"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/header_main">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -22,87 +30,71 @@
             android:paddingStart="16dp"
             android:paddingTop="16dp"
             android:paddingEnd="16dp"
-            android:paddingBottom="10dp" >
+            android:paddingBottom="10dp">
 
             <TextView
                 android:id="@+id/textView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Hi, Daksh!"
-                android:textColor="@color/dark_blue"
+                android:layout_marginTop="6dp"
+                android:text="Good Afternoon,"
+                android:fontFamily="@font/montserrat_bold_italic"
+                android:textColor="#371B34"
                 android:textSize="28dp"
-                android:layout_marginTop="16dp"/>
+                android:shadowColor="#80000000"
+                android:shadowDx="2"
+                android:shadowDy="2"
+                android:shadowRadius="4"/>
 
             <TextView
                 android:id="@+id/textView2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Good Morning"
-                android:textColor="@color/dark_blue"
-                android:textSize="16sp"
-                android:layout_marginTop="8dp"/>
+                android:layout_marginTop="-10dp"
+                android:text="Sarina!"
+                android:fontFamily="@font/montserrat_bold_italic"
+                android:textColor="#371B34"
+                android:textSize="28dp"
+                android:shadowColor="#80000000"
+                android:shadowDx="2"
+                android:shadowDy="2"
+                android:shadowRadius="4" />
 
-            <EditText
-                android:id="@+id/editTextText"
+            <TextView
+                android:id="@+id/textView3"
                 android:layout_width="match_parent"
-                android:layout_height="55dp"
-                android:background="@drawable/edittext_background"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"
-                android:drawableStart="@drawable/search"
-                android:paddingStart="16dp"
-                android:drawablePadding="16dp"
-                android:hint="Search..."
-                android:textColor="@color/dark_blue"
-                android:textColorHint="@color/dark_blue"
-                android:textSize="18sp"
-                android:ems="10"
-                android:inputType="text" />
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="How are you feeling today ?"
+                android:fontFamily="@font/ubuntu_bold"
+                android:textColor="#371B34"
+                android:textSize="18dp"
+                android:shadowColor="#80000000"
+                android:shadowDx="2"
+                android:shadowDy="2"
+                android:shadowRadius="4"
+                android:layout_marginBottom="10dp"/>
 
             <androidx.recyclerview.widget.RecyclerView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="1px"
                 android:id="@+id/banner"
-                tools:listitem="@layout/item_banner"
-                android:orientation="horizontal"
-                android:clipToPadding="false"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
-
-            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"
-                android:orientation="horizontal">
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:orientation="horizontal"
+                android:padding="1dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_banner" />
 
-                <TextView
-                    android:id="@+id/textView5"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Blogs"
-                    android:textStyle="bold"
-                    android:textColor="@color/dark_blue"
-                    android:textSize="16sp"/>
 
-                <TextView
-                    android:id="@+id/textView6"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="View all"
-                    android:textSize="14sp"
-                    android:textColor="@color/dark_blue"/>
-            </LinearLayout>
 
             <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/ViewOngoing"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:id="@+id/ViewOngoing"
-                tools:listitem="@layout/item_blogs"
-                android:orientation="horizontal"
                 android:clipToPadding="false"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+                android:orientation="horizontal"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_blogs" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -117,16 +109,15 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="My Progress"
-                    android:textStyle="bold"
                     android:textColor="@color/dark_blue"
-                    android:textSize="16sp"/>
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
             </LinearLayout>
 
-           <include
+            <include
+                layout="@layout/item_myprogress"
                 android:layout_width="match_parent"
-               android:layout_height="70dp"
-               layout="@layout/item_myprogress">
-           </include>
+                android:layout_height="70dp"></include>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -141,34 +132,34 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Trending Exercise"
-                    android:textStyle="bold"
                     android:textColor="@color/dark_blue"
-                    android:textSize="16sp"/>
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
             </LinearLayout>
+
             <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/trendingrcy"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:id="@+id/trendingrcy"
-                tools:listitem="@layout/item_trending"
-                android:orientation="horizontal"
                 android:clipToPadding="false"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+                android:orientation="horizontal"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_trending" />
 
             <include
+                layout="@layout/item_help_breath"
                 android:layout_width="match_parent"
                 android:layout_height="70dp"
                 android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"
-                layout="@layout/item_help_breath">
-            </include>
+                android:layout_marginBottom="16dp"></include>
 
             <include
+                layout="@layout/item_system_reset"
                 android:layout_width="match_parent"
                 android:layout_height="150dp"
                 android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"
-                layout="@layout/item_system_reset">
-            </include>
+                android:layout_marginBottom="16dp"></include>
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -182,26 +173,27 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Personal Diary"
-                    android:textStyle="bold"
                     android:textColor="@color/dark_blue"
-                    android:textSize="16sp"/>
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/viewAllDiary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="View all"
-                    android:textSize="14sp"
-                    android:textColor="@color/dark_blue"/>
+                    android:textColor="@color/dark_blue"
+                    android:textSize="14sp" />
             </LinearLayout>
+
             <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/diaryRecyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:id="@+id/diaryRecyclerView"
-                tools:listitem="@layout/item_container_diary"
-                android:orientation="horizontal"
                 android:clipToPadding="false"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+                android:orientation="horizontal"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_container_diary" />
         </LinearLayout>
     </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>
