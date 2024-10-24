@@ -1,5 +1,8 @@
 package com.example.horizon.ui.fragment.dashboard.adapter
 
+import android.annotation.SuppressLint
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -23,15 +26,21 @@ class bannerAdapter : ListAdapter<bannerModel, bannerAdapter.BannerViewHolder>(b
     }
 
     class BannerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        private val titleTextView: TextView = itemView.findViewById(R.id.textView3)
-        private val imageView: ImageView = itemView.findViewById(R.id.imageView)
+        private val backgroundImageView: ImageView = itemView.findViewById(R.id.image_background)
+        private val iconImageView: ImageView = itemView.findViewById(R.id.icon_image)
+        private val textView: TextView = itemView.findViewById(R.id.item_text)
 
         fun bind(item: bannerModel) {
-            titleTextView.text = item.title
+            textView.text = item.title
+
             Glide.with(itemView.context)
                 .load(item.imageUrl)
-                .error(R.drawable.pic_banner)
-                .into(imageView)
+                .error(R.drawable.placeholder_image) // Fallback image
+                .into(iconImageView)
+            val drawable = backgroundImageView.background as GradientDrawable
+
+            val newColor = Color.parseColor(item.backgroundColor)
+            drawable.setColor(newColor)
         }
     }
 

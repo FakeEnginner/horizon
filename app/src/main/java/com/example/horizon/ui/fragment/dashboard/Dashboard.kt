@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.horizon.Interface.mainFrameChange
 import androidx.lifecycle.Observer
+import com.example.horizon.R
 import com.example.horizon.databinding.FragmentDashboardBinding
 import com.example.horizon.model.bannerModel
 import com.example.horizon.model.blogModel
@@ -94,9 +95,12 @@ class Dashboard: Fragment() ,diaryAdapter.OnItemClickListener{
         bannerAdapter = bannerAdapter()
         recyclerView.adapter = bannerAdapter
         val items = listOf(
-            bannerModel(1, "Item 1", "https://example.com/image1.jpg"),
-            bannerModel(2, "Item 2", "https://example.com/image2.jpg"),
-            bannerModel(3, "Item 3", "https://example.com/image3.jpg")
+            bannerModel(1, "Happy", R.drawable.smile, "#EF5DA8"),
+            bannerModel(2, "Calm", R.drawable.calm, "#AEAFF7"),
+            bannerModel(3, "Manic", R.drawable.relax, "#A0E3E2"),
+            bannerModel(4, "Angry", R.drawable.angry, "#F09E54"),
+            bannerModel(5, "Angry", R.drawable.relax, "#C3F2A6"),
+            bannerModel(6, "Item 3", R.drawable.relax, "#A0E3E2"),
         )
         bannerAdapter.submitList(items)
         handler.postDelayed(scrollRunnable, 3000)
