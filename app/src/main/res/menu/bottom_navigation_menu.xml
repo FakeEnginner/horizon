@@ -2,22 +2,20 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/Home"
         android:title="Home"
-        android:icon="@drawable/bottom_btn1"/>
+        android:icon="@drawable/home"/>
 
     <item android:id="@+id/Search"
         android:title="Home"
-        android:icon="@drawable/bottom_btn2"/>
+        android:icon="@drawable/camera"/>
 
-    <item android:id="@+id/placeholder"
-        android:title="" />
 
     <item android:id="@+id/Profilr"
         android:title="Profile"
-        android:icon="@drawable/ongoing2"/>
+        android:icon="@drawable/message"/>
 
     <item android:id="@+id/Setting"
         android:title="Setting"
-        android:icon="@drawable/next_icon"/>
+        android:icon="@drawable/community"/>
 
 
 
