@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    android:id="@+id/layout_quote"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="@drawable/quote_rectangle"
+    android:layout_width="match_parent"
+    android:layout_height="120dp"
+    android:layout_margin="6dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/element_txt"
+            android:layout_margin="15dp"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/ubuntu_regular"
+            android:shadowColor="#80000000"
+            android:text="“It is better to conquer yourself than to win a thousand battles”"
+            android:textColor="#371B34"
+            android:textSize="12dp" />
+        <ImageView
+            android:id="@+id/element_img"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:src="@drawable/quote"
+            android:layout_marginRight="10dp"/>
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

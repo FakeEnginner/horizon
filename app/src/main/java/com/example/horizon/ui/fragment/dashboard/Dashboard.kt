@@ -126,15 +126,8 @@ class Dashboard: Fragment() ,diaryAdapter.OnItemClickListener{
         blogAdapter = blogAdapter()
         blogsRecyclerView.adapter = blogAdapter
         val items = listOf(
-            blogModel(1, "Item 1", "https://example.com/image1.jpg"),
-            blogModel(2, "Item 2", "https://example.com/image2.jpg"),
-            blogModel(3, "Item 3", "https://example.com/image3.jpg"),
-            blogModel(4, "Item 3", "https://example.com/image3.jpg"),
-            blogModel(1, "Item 1", "https://example.com/image1.jpg"),
-            blogModel(2, "Item 2", "https://example.com/image2.jpg"),
-            blogModel(3, "Item 3", "https://example.com/image3.jpg"),
-            blogModel(4, "Item 3", "https://example.com/image3.jpg")
-
+            blogModel(1, "Journal", R.drawable.journal_icon),
+            blogModel(2, "Library", R.drawable.library_icon),
         )
         blogAdapter.submitList(items)
     }

@@ -5,12 +5,12 @@
     android:layout_margin="25px"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:id="@+id/session_one">
+    android:id="@+id/meditation">
 
     <LinearLayout
         android:layout_width="371dp"
         android:layout_height="136dp"
-        android:background="@drawable/one_one"
+        android:background="@drawable/meditation_box"
         android:orientation="horizontal"
         android:padding="12dp"
         android:layout_marginBottom="2dp"
@@ -18,8 +18,8 @@
         tools:ignore="MissingConstraints">
 
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="220dp"
+            android:layout_height="match_parent"
             android:orientation="vertical">
 
             <TextView
@@ -28,11 +28,8 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/montserrat_bold_italic"
                 android:shadowColor="#80000000"
-                android:shadowDx="2"
-                android:shadowDy="2"
-                android:shadowRadius="4"
-                android:text="1 on 1 Sessions"
-                android:textColor="#371B34"
+                android:text="Plan Expired"
+                android:textColor="#ffffff"
                 android:textSize="25dp" />
 
             <TextView
@@ -41,8 +38,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
                 android:fontFamily="@font/ubuntu_regular"
-                android:text="Let’s open up to the things \nthat matter the most "
-                android:textColor="#371B34"
+                android:text="Get back chat access and session credits "
+                android:textColor="#ffffff"
                 android:textSize="15dp" />
 
             <LinearLayout
@@ -56,15 +53,16 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/ubuntu_bold"
-                    android:text="Book Now"
-                    android:textColor="#FE8235"
+                    android:text="Buy More"
+                    android:textColor="#ffffff"
                     android:textSize="18dp" />
 
                 <ImageView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:padding="4dp"
-                    android:src="@drawable/calender" />
+                    android:layout_gravity="center"
+                    android:src="@drawable/arrow_right" />
 
             </LinearLayout>
         </LinearLayout>
@@ -74,12 +72,6 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_marginLeft="60dp"
-            android:src="@drawable/meetup" />
-
-
+            android:src="@drawable/meditation_icon" />
     </LinearLayout>
-
-
-
-
 </androidx.constraintlayout.widget.ConstraintLayout>
