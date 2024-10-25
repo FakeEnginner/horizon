@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_margin="25px"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:id="@+id/meditation">
+
+    <LinearLayout
+        android:layout_width="371dp"
+        android:layout_height="136dp"
+        android:background="@drawable/meditation_box"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:layout_marginBottom="2dp"
+        tools:layout_editor_absoluteY="8dp"
+        tools:ignore="MissingConstraints">
+
+        <LinearLayout
+            android:layout_width="220dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/montserrat_bold_italic"
+                android:shadowColor="#80000000"
+                android:text="Plan Expired"
+                android:textColor="#ffffff"
+                android:textSize="25dp" />
+
+            <TextView
+                android:id="@+id/textView2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:fontFamily="@font/ubuntu_regular"
+                android:text="Get back chat access and session credits "
+                android:textColor="#ffffff"
+                android:textSize="15dp" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/booknow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/ubuntu_bold"
+                    android:text="Buy More"
+                    android:textColor="#ffffff"
+                    android:textSize="18dp" />
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="4dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/arrow_right" />
+
+            </LinearLayout>
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginLeft="60dp"
+            android:src="@drawable/meditation_icon" />
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

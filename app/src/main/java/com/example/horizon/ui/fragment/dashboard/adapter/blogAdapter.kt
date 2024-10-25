@@ -19,20 +19,17 @@ class blogAdapter : ListAdapter<blogModel, blogAdapter.blogViewHolder>(blogDiffC
         viewType: Int
     ): blogViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_blogs, parent, false)
+            .inflate(R.layout.item_element, parent, false)
         return blogViewHolder(view)
     }
 
     class blogViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        private val titleTextView: TextView = itemView.findViewById(R.id.blog_txt)
-        private val imageView: ImageView = itemView.findViewById(R.id.banner_img)
+        private val titleTextView: TextView = itemView.findViewById(R.id.element_txt)
+        private val imageView: ImageView = itemView.findViewById(R.id.element_img)
 
         fun bind(item: blogModel) {
             titleTextView.text = item.title
-            Glide.with(itemView.context)
-                .load(item.imageUrl)
-                .error(R.drawable.pic_banner)
-                .into(imageView)
+            imageView.setImageResource(item.imageUrl)
         }
 
     }
