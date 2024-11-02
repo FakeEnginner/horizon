@@ -96,7 +96,7 @@ class Dashboard: Fragment() ,diaryAdapter.OnItemClickListener{
             bannerModel(2, "Calm", R.drawable.calm, "#AEAFF7"),
             bannerModel(3, "Manic", R.drawable.relax, "#A0E3E2"),
             bannerModel(4, "Angry", R.drawable.angry, "#F09E54"),
-            bannerModel(5, "Angry", R.drawable.relax, "#C3F2A6"),
+            bannerModel(5, "Focus", R.drawable.focus_logo, "#013220"),
             bannerModel(6, "Item 3", R.drawable.relax, "#A0E3E2"),
         )
         bannerAdapter.submitList(items)
