@@ -13,10 +13,12 @@
         android:title="Profile"
         android:icon="@drawable/message"/>
 
-    <item android:id="@+id/Setting"
+    <item android:id="@+id/community"
         android:title="Setting"
         android:icon="@drawable/community"/>
 
-
+    <item android:id="@+id/Setting"
+        android:title="Setting"
+        android:icon="@drawable/settings"/>
 
 </menu>

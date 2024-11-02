@@ -24,7 +24,7 @@ class blogAdapter : ListAdapter<blogModel, blogAdapter.blogViewHolder>(blogDiffC
     }
 
     class blogViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        private val titleTextView: TextView = itemView.findViewById(R.id.element_txt)
+        private val titleTextView: TextView = itemView!!.findViewById(R.id.element_txt)
         private val imageView: ImageView = itemView.findViewById(R.id.element_img)
 
         fun bind(item: blogModel) {

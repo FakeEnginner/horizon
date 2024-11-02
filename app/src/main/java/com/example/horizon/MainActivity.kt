@@ -1,122 +1,144 @@
 package com.example.horizon
 
-import android.content.Context
-import android.content.res.Resources.Theme
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.FrameLayout
-import androidx.lifecycle.ViewModel
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import com.example.horizon.Interface.FrameLayoutChanger
+import com.example.horizon.Interface.mainFrameChange
 import com.example.horizon.databinding.ActivityMainBinding
 import com.example.horizon.factory.OnBoardingCheckViewModelFactory
 import com.example.horizon.model.onBoardingCheck
 import com.example.horizon.privacy.DeveloperOption
 import com.example.horizon.privacy.Rooted
+import com.example.horizon.ui.fragment.login.login
 import com.example.horizon.ui.fragment.onboarding.onboardingFragment
 import com.example.horizon.utils.Helper
 import com.example.horizon.utils.Internet_connectivity
-import timber.log.Timber
-import androidx.activity.viewModels
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.example.horizon.Interface.mainFrameChange
-import com.example.horizon.ui.fragment.login.login
 import com.example.horizon.utils.firebaseConfig
 import com.example.horizon.viewModel.OnBoardingCheckViewModel
+import timber.log.Timber
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
+class MainActivity : AppCompatActivity(), FrameLayoutChanger, mainFrameChange {
 
-class MainActivity : AppCompatActivity() , FrameLayoutChanger, mainFrameChange {
-    lateinit var binding: ActivityMainBinding
+    // View binding and layouts
+    private lateinit var binding: ActivityMainBinding
     private lateinit var frameLayout: FrameLayout
-    private lateinit var dashboardContainer : FrameLayout
-    var rooted_ = Rooted()
-    var developerOption: DeveloperOption = DeveloperOption()
-    var helper = Helper()
-    var firebaseConfig = firebaseConfig()
+    private lateinit var dashboardContainer: FrameLayout
 
-    private val onBoardingCheckViewModel: OnBoardingCheckViewModel by viewModels  {
+    // Utility and helper instances
+    private val rootedCheck = Rooted()
+    private val developerOption = DeveloperOption()
+    private val helper = Helper()
+    private val firebaseConfig = firebaseConfig()
+    private val internetConnectivity = Internet_connectivity()
+
+    // ViewModel for OnBoarding
+    private val onBoardingCheckViewModel: OnBoardingCheckViewModel by viewModels {
         OnBoardingCheckViewModelFactory((application as MyApplication).database)
     }
 
-//    diaryViewModel = ViewModelProvider(this).get(DiaryViewModel::class.java)
-//
-//    diaryViewModel.allDiaries.observe(this, Observer { diaries ->
-//        // Update UI with diary list
-//    })
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        Thread.sleep(3000)
+
+        // Setup splash screen
         installSplashScreen()
 
+        // Setup binding and layout
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        /*
-        * for handle visibilty of of dashboard and framelayout
-        * */
-        handleVisibilty()
+        // Setup initial UI visibility
+        setupInitialUIVisibility()
 
-        val developerOptionsEnabled =developerOption.isDeveloperOptionsEnabled(applicationContext)
-        //insert onBoardingCheck
+        // Check and handle onboarding status
+        checkOnBoardingStatus()
 
-       val onBoardingCheck = onBoardingCheck(onBoardingCheck = false)
-        onBoardingCheckViewModel.getOnBoardingCheckById(0){
-            if(it == null){
-                onBoardingCheckViewModel.insertOnBoardingCheck(onBoardingCheck)
-                helper.replaceFragment(onboardingFragment(),supportFragmentManager)
-            }else{
-                onBoardingCheckViewModel.isOnBoardingChecked(0) { isChecked ->
-                    if(isChecked){
-                        helper.replaceFragment(login(),supportFragmentManager)
-                    }
-                    else {
-                        helper.replaceFragment(onboardingFragment(),supportFragmentManager)
-                    }
-                }
-            }
-        }
-        //root check condition
-        if(!rooted_.isRootedDevice()){
-            //Developer option check
-            Timber.tag("developer_option").e("${developerOptionsEnabled}")
-            if(developerOptionsEnabled) {
-                Timber.tag("Developeroption").e("Developer option is On")
+        // Check for device security settings
+        performSecurityChecks()
 
-            }
-            else{
-                Timber.tag("Developeroption").e("Developer option is Off")
-                Timber.tag("PhoneStatus").e("Phone is not Rooted")
-            }
-        }else{
-            Timber.tag("PhoneStatus").e("Phone is Rooted")
-        }
-        val internetConnectivity = Internet_connectivity()
-        val context = applicationContext
-        if (internetConnectivity.isNetworkAvailable(context)) {
-            // Internet is available
-            // Perform network-related tasks here
-        } else {
-            // No internet connection
-            // Handle the case where there is no internet connectivity
-        }
+        // Check for internet connectivity
+        checkInternetConnectivity()
     }
 
-    fun handleVisibilty(){
+    /**
+     * Sets initial visibility of dashboard and frame layout
+     */
+    private fun setupInitialUIVisibility() {
         binding.dashcnt.visibility = View.GONE
         binding.frameLayout.visibility = View.VISIBLE
     }
 
-    /*
-    * for replacing fragment (from layout visibility gone)
-    * function override bcz of interface is implemented
-    */
+    /**
+     * Checks the onboarding status and navigates to the appropriate fragment
+     */
+    private fun checkOnBoardingStatus() {
+        val initialOnBoardingCheck = onBoardingCheck(onBoardingCheck = false)
+
+        onBoardingCheckViewModel.getOnBoardingCheckById(0) { onBoardingCheck ->
+            if (onBoardingCheck == null) {
+                onBoardingCheckViewModel.insertOnBoardingCheck(initialOnBoardingCheck)
+                helper.replaceFragment(onboardingFragment(), supportFragmentManager)
+            } else {
+                onBoardingCheckViewModel.isOnBoardingChecked(0) { isChecked ->
+                    val fragment = if (isChecked) login() else onboardingFragment()
+                    helper.replaceFragment(fragment, supportFragmentManager)
+                }
+            }
+        }
+    }
+
+    /**
+     * Performs security checks like root status and developer options
+     */
+    private fun performSecurityChecks() {
+        if (!rootedCheck.isRootedDevice()) {
+            val developerOptionsEnabled = developerOption.isDeveloperOptionsEnabled(applicationContext)
+
+            Timber.tag("developer_option").e("$developerOptionsEnabled")
+            if (developerOptionsEnabled) {
+                Timber.tag("Developeroption").e("Developer option is On")
+            } else {
+                Timber.tag("Developeroption").e("Developer option is Off")
+                Timber.tag("PhoneStatus").e("Phone is not Rooted")
+            }
+        } else {
+            Timber.tag("PhoneStatus").e("Phone is Rooted")
+        }
+    }
+
+    /**
+     * Checks internet connectivity status
+     */
+    private fun checkInternetConnectivity() {
+        if (internetConnectivity.isNetworkAvailable(applicationContext)) {
+            // Handle tasks when internet is available
+        } else {
+            // Handle no internet connectivity
+        }
+    }
+
+    /**
+     * Changes visibility for frame layout and dashboard container
+     */
     override fun replaceFrameLayout() {
-        frameChange()
+        changeToDashboardView()
     }
-    fun showDashboardContainer() {
-        frameChange()
+
+    private fun changeToDashboardView() {
+        binding.frameLayout.visibility = View.GONE
+        binding.dashcnt.visibility = View.VISIBLE
+        binding.DashboardContainer.visibility = View.VISIBLE
     }
+
+    override fun mainFrameChange() {
+        binding.frameLayout.visibility = View.VISIBLE
+        binding.dashcnt.visibility = View.GONE
+        binding.DashboardContainer.visibility = View.GONE
+    }
+
     override fun onBackPressed() {
         if (shouldExitApp()) {
             finishAffinity()
@@ -125,18 +147,14 @@ class MainActivity : AppCompatActivity() , FrameLayoutChanger, mainFrameChange {
         }
     }
 
+    /**
+     * Checks if the app should exit based on navigation stack
+     */
     private fun shouldExitApp(): Boolean {
         return isTaskRoot && supportFragmentManager.backStackEntryCount == 0
     }
 
-   fun  frameChange(){
-       binding.frameLayout.visibility = View.GONE
-       binding.dashcnt.visibility = View.VISIBLE
-       binding.DashboardContainer.visibility = View.VISIBLE
-    }
-    override fun mainFrameChange() {
-        binding.frameLayout.visibility = View.VISIBLE
-        binding.dashcnt.visibility = View.GONE
-        binding.DashboardContainer.visibility = View.GONE
+    fun showDashboardContainer() {
+        changeToDashboardView()
     }
 }

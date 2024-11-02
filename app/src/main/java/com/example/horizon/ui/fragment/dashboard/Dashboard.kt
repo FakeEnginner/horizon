@@ -21,7 +21,6 @@ import com.example.horizon.model.entities.diary
 import com.example.horizon.model.trendeningModel
 import com.example.horizon.ui.fragment.dashboard.adapter.bannerAdapter
 import com.example.horizon.ui.fragment.dashboard.adapter.blogAdapter
-import com.example.horizon.ui.fragment.dashboard.adapter.trendeningAdapter
 import com.example.horizon.ui.fragment.diary.NewDiaryHandler
 import com.example.horizon.ui.fragment.diary.adapter.diaryAdapter
 import com.example.horizon.ui.fragment.diary.diaryHandler
@@ -35,7 +34,6 @@ class Dashboard: Fragment() ,diaryAdapter.OnItemClickListener{
     private lateinit var recyclerView: RecyclerView
     private lateinit var bannerAdapter: bannerAdapter
     private lateinit var blogAdapter: blogAdapter
-    private lateinit var trendingAdapter: trendeningAdapter
     private lateinit var diaryAdapter: diaryAdapter
     private lateinit var diaryViewModel: DiaryViewModel
 
@@ -85,7 +83,6 @@ class Dashboard: Fragment() ,diaryAdapter.OnItemClickListener{
     fun initRecyclerViewHandler(){
         setupBannerRecyclerView()
         setupBlogsRecyclerView()
-        setupTrendingRecyclerView()
         setupDiaryRecylerView()
     }
 
@@ -99,7 +96,7 @@ class Dashboard: Fragment() ,diaryAdapter.OnItemClickListener{
             bannerModel(2, "Calm", R.drawable.calm, "#AEAFF7"),
             bannerModel(3, "Manic", R.drawable.relax, "#A0E3E2"),
             bannerModel(4, "Angry", R.drawable.angry, "#F09E54"),
-            bannerModel(5, "Angry", R.drawable.relax, "#C3F2A6"),
+            bannerModel(5, "Focus", R.drawable.focus_logo, "#013220"),
             bannerModel(6, "Item 3", R.drawable.relax, "#A0E3E2"),
         )
         bannerAdapter.submitList(items)
@@ -132,24 +129,6 @@ class Dashboard: Fragment() ,diaryAdapter.OnItemClickListener{
         blogAdapter.submitList(items)
     }
 
-    private fun setupTrendingRecyclerView(){
-        val trendeningRecyclerView = binding.trendingrcy
-        trendeningRecyclerView.layoutManager =
-            LinearLayoutManager(context,LinearLayoutManager.HORIZONTAL,false)
-        trendingAdapter = trendeningAdapter()
-        trendeningRecyclerView.adapter = trendingAdapter
-        val items = listOf(
-            trendeningModel(1, "Item 1", "https://example.com/image1.jpg"),
-            trendeningModel(2, "Item 2", "https://example.com/image2.jpg"),
-            trendeningModel(3, "Item 3", "https://example.com/image3.jpg"),
-            trendeningModel(4, "Item 3", "https://example.com/image3.jpg"),
-            trendeningModel(1, "Item 1", "https://example.com/image1.jpg"),
-            trendeningModel(2, "Item 2", "https://example.com/image2.jpg"),
-            trendeningModel(3, "Item 3", "https://example.com/image3.jpg"),
-            trendeningModel(4, "Item 3", "https://example.com/image3.jpg")
-        )
-        trendingAdapter.submitList(items)
-    }
     override fun onDestroyView() {
         super.onDestroyView()
         handler.removeCallbacks(scrollRunnable)
