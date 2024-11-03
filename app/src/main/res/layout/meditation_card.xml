@@ -8,7 +8,7 @@
     android:id="@+id/session_one">
 
     <LinearLayout
-        android:layout_width="371dp"
+        android:layout_width="wrap_content"
         android:layout_height="136dp"
         android:background="@drawable/one_one"
         android:orientation="horizontal"
@@ -18,7 +18,7 @@
         tools:ignore="MissingConstraints">
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="240dp"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
@@ -28,7 +28,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/montserrat_bold_italic"
                 android:shadowColor="#80000000"
-                android:text="1 on 1 Sessions"
+                android:text="Meditation"
                 android:textColor="#371B34"
                 android:textSize="25dp" />
 
@@ -38,7 +38,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
                 android:fontFamily="@font/ubuntu_regular"
-                android:text="Let’s open up to the things \nthat matter the most "
+                android:text="Aura is the most important thing that matters to you.join us on "
                 android:textColor="#371B34"
                 android:textSize="15dp" />
 
@@ -53,7 +53,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/ubuntu_bold"
-                    android:text="Book Now"
+                    android:text="06:00 PM"
                     android:textColor="#FE8235"
                     android:textSize="18dp" />
 
@@ -61,7 +61,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:padding="4dp"
-                    android:src="@drawable/calender" />
+                    android:src="@drawable/orange_clock" />
 
             </LinearLayout>
         </LinearLayout>
@@ -71,7 +71,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_marginLeft="60dp"
-            android:src="@drawable/meetup" />
+            android:src="@drawable/orange_lotus" />
 
 
     </LinearLayout>
