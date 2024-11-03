@@ -29,9 +29,6 @@
           android:layout_height="wrap_content"
           android:fontFamily="@font/ubuntu_bold"
           android:shadowColor="#80000000"
-          android:shadowDx="2"
-          android:shadowDy="2"
-          android:shadowRadius="4"
           android:text="Journal"
           android:textColor="#371B34"
           android:textSize="20dp" />
