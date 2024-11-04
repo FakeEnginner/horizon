@@ -20,70 +20,76 @@ import com.example.horizon.utils.Helper
 import com.example.horizon.viewmodel.DiaryViewModel
 
 
-class diaryHandler :Fragment(), diaryAdapter.OnItemClickListener {
+class diaryHandler : Fragment(), diaryAdapter.OnItemClickListener {
 
     private lateinit var fragmentDiaryBinding: FragmentDiaryBinding
     private var mainFrameChange: mainFrameChange? = null
     private lateinit var diaryViewModel: DiaryViewModel
     private lateinit var diaryAdapter: diaryAdapter
+    private var allDiaries = listOf<diary>() // To keep the full list of diaries
 
     val helper = Helper()
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View? {
-       fragmentDiaryBinding = FragmentDiaryBinding.inflate(layoutInflater,container,false)
+        diaryViewModel = ViewModelProvider(this).get(DiaryViewModel::class.java)
+        fragmentDiaryBinding = FragmentDiaryBinding.inflate(inflater, container, false)
 
         val recyclerView = fragmentDiaryBinding.diaryRecyclerView
         diaryAdapter = diaryAdapter(this)
         recyclerView.adapter = diaryAdapter
-//        recyclerView.layoutManager = LinearLayoutManager(context)
-        val staggeredGridLayoutManager =
-            StaggeredGridLayoutManager(2, LinearLayoutManager.VERTICAL)
-        recyclerView.layoutManager = staggeredGridLayoutManager
-        diaryViewModel = ViewModelProvider(this).get(DiaryViewModel::class.java)
+        recyclerView.layoutManager = StaggeredGridLayoutManager(2, LinearLayoutManager.VERTICAL)
 
-        // get all diary from database
-        diaryViewModel.allDiaries.observe(viewLifecycleOwner, Observer { diaries ->
+        // Observe all diaries only once
+        diaryViewModel.allDiaries.observe(viewLifecycleOwner) { diaries ->
             diaries?.let {
-                diaryAdapter.setDiaries(it)
+                allDiaries = it // Store the full list
+                diaryAdapter.setDiaries(allDiaries) // Display full list
             }
-        })
-        //search functionality
+        }
+
+        // Search functionality
         fragmentDiaryBinding.editTextText.addTextChangedListener { text ->
             val query = text.toString()
-            diaryViewModel.searchDiaries(query).observe(viewLifecycleOwner, Observer { diaries ->
-                diaries?.let {
-                    diaryAdapter.setDiaries(it)
+            if (query.isEmpty()) {
+                diaryAdapter.setDiaries(allDiaries) // Reset to full list
+            } else {
+                // Call the search method to filter diaries
+                diaryViewModel.searchDiaries(query).observe(viewLifecycleOwner) { filteredDiaries ->
+                    filteredDiaries?.let {
+                        diaryAdapter.setDiaries(it) // Update with filtered results
+                    }
                 }
-            })
+            }
         }
 
-        //add new diary
+        // Add new diary
         fragmentDiaryBinding.fab.setOnClickListener {
             mainFrameChange()
-            helper.replacetoDashboardFragment(NewDiaryHandler(),requireFragmentManager())
+            helper.replacetoDashboardFragment(NewDiaryHandler(), requireFragmentManager())
         }
+
         return fragmentDiaryBinding.root
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val callback = object : OnBackPressedCallback(true){
+        val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                helper.replacetoDashboardFragment(Dashboard(),requireFragmentManager())
+                helper.replacetoDashboardFragment(Dashboard(), requireFragmentManager())
             }
         }
-        requireActivity().onBackPressedDispatcher.addCallback(this,callback)
+        requireActivity().onBackPressedDispatcher.addCallback(this, callback)
     }
+
     fun mainFrameChange() {
         mainFrameChange?.mainFrameChange()
     }
 
-   override fun onItemClick(diary: diary) {
+    override fun onItemClick(diary: diary) {
         val fragment = NewDiaryHandler().apply {
             arguments = Bundle().apply {
                 putInt("DIARY_ID", diary.id)
@@ -91,5 +97,4 @@ class diaryHandler :Fragment(), diaryAdapter.OnItemClickListener {
         }
         helper.replacetoDashboardFragment(fragment, requireFragmentManager())
     }
-
 }
