@@ -20,6 +20,10 @@ import com.example.horizon.utils.firebaseConfig
 import com.example.horizon.viewModel.OnBoardingCheckViewModel
 import timber.log.Timber
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.example.horizon.ui.fragment.dashboard.Dashboard
+import com.example.horizon.ui.fragment.upcomingSession.upcoming
+import com.example.horizon.ui.fragment.wellnessHub.wellness
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity(), FrameLayoutChanger, mainFrameChange {
 
@@ -34,6 +38,8 @@ class MainActivity : AppCompatActivity(), FrameLayoutChanger, mainFrameChange {
     private val helper = Helper()
     private val firebaseConfig = firebaseConfig()
     private val internetConnectivity = Internet_connectivity()
+    private var frameLayoutChanger: FrameLayoutChanger? = null
+
 
     // ViewModel for OnBoarding
     private val onBoardingCheckViewModel: OnBoardingCheckViewModel by viewModels {
@@ -61,6 +67,9 @@ class MainActivity : AppCompatActivity(), FrameLayoutChanger, mainFrameChange {
 
         // Check for internet connectivity
         checkInternetConnectivity()
+
+        //Bottom Navigation
+        bottomNavigationHandle()
     }
 
     /**
@@ -156,5 +165,45 @@ class MainActivity : AppCompatActivity(), FrameLayoutChanger, mainFrameChange {
 
     fun showDashboardContainer() {
         changeToDashboardView()
+    }
+
+    private fun bottomNavigationHandle(){
+        val bottomNavigationView = binding.bottomNavigationView
+        bottomNavigationView.setOnNavigationItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.homebtn -> {
+                    frameLayoutChanger?.replaceFrameLayout()
+                    helper?.replacetoDashboardFragment(Dashboard(),supportFragmentManager)
+                    showDashboardContainer()
+                    true
+                }
+                R.id.camerabtn -> {
+                    frameLayoutChanger?.replaceFrameLayout()
+                    helper?.replacetoDashboardFragment(upcoming(),supportFragmentManager)
+                    showDashboardContainer()
+                    true
+                }
+                R.id.messagebtn -> {
+                    frameLayoutChanger?.replaceFrameLayout()
+                    showDashboardContainer()
+//                  loadFragment(NotificationsFragment())
+                    true
+                }
+                R.id.communitybtn -> {
+                    frameLayoutChanger?.replaceFrameLayout()
+                    helper?.replacetoDashboardFragment(wellness(),supportFragmentManager)
+                    showDashboardContainer()
+                    true
+                }
+                R.id.settingbtn -> {
+                    frameLayoutChanger?.replaceFrameLayout()
+                    showDashboardContainer()
+//                    loadFragment(DashboardFragment())
+                    true
+                }
+                else -> false
+            }
+        }
+
     }
 }

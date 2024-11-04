@@ -7,6 +7,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.horizon.R
 import com.example.horizon.model.entities.diary
+import android.graphics.Color
+
 
 class diaryAdapter(private val listener: OnItemClickListener) : RecyclerView.Adapter<diaryAdapter.DiaryViewHolder>() {
 
@@ -33,6 +35,7 @@ class diaryAdapter(private val listener: OnItemClickListener) : RecyclerView.Ada
         private val titleTextView: TextView = itemView.findViewById(R.id.textTitle)
         private val subtitleTextView: TextView = itemView.findViewById(R.id.textSubtitle)
         private val dateTimeTextView: TextView = itemView.findViewById(R.id.textDateTime)
+        private val selectedColorView: View = itemView.findViewById(R.id.cardDiary)
 
         init {
             itemView.setOnClickListener {
@@ -47,6 +50,16 @@ class diaryAdapter(private val listener: OnItemClickListener) : RecyclerView.Ada
             titleTextView.text = diary.title
             subtitleTextView.text = diary.subtitle
             dateTimeTextView.text = diary.dateTime
+            if (!diary.color.isNullOrEmpty()) {
+                try {
+                    selectedColorView.setBackgroundColor(Color.parseColor(diary.color))
+                } catch (e: IllegalArgumentException) {
+                    // Handle the case where the color string is not valid
+                    selectedColorView.setBackgroundColor(Color.WHITE) // or any default color
+                }
+            } else {
+                selectedColorView.setBackgroundColor(Color.WHITE) // or any default color
+            }
         }
     }
     interface OnItemClickListener {

@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/Home"
+    <item android:id="@+id/homebtn"
         android:title="Home"
         android:icon="@drawable/home"/>
 
-    <item android:id="@+id/Search"
+    <item android:id="@+id/camerabtn"
         android:title="Home"
         android:icon="@drawable/camera"/>
 
 
-    <item android:id="@+id/Profilr"
+    <item android:id="@+id/messagebtn"
         android:title="Profile"
         android:icon="@drawable/message"/>
 
-    <item android:id="@+id/community"
+    <item android:id="@+id/communitybtn"
         android:title="Setting"
         android:icon="@drawable/community"/>
 
-    <item android:id="@+id/Setting"
+    <item android:id="@+id/settingbtn"
         android:title="Setting"
         android:icon="@drawable/settings"/>
 

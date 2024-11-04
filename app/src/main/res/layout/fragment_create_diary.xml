@@ -129,8 +129,8 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/inputdiarySubtitle"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
-
-
     </ScrollView>
+    <include layout="@layout/layout_miscellenous"
+        android:id="@+id/layout_miscellenous"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
