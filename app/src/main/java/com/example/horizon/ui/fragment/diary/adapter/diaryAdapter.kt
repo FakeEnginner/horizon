@@ -54,11 +54,10 @@ class diaryAdapter(private val listener: OnItemClickListener) : RecyclerView.Ada
                 try {
                     selectedColorView.setBackgroundColor(Color.parseColor(diary.color))
                 } catch (e: IllegalArgumentException) {
-                    // Handle the case where the color string is not valid
-                    selectedColorView.setBackgroundColor(Color.WHITE) // or any default color
+                    selectedColorView.setBackgroundColor(Color.WHITE)
                 }
             } else {
-                selectedColorView.setBackgroundColor(Color.WHITE) // or any default color
+                selectedColorView.setBackgroundColor(Color.WHITE)
             }
         }
     }
