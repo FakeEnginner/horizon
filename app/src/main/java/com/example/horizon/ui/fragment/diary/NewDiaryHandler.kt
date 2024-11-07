@@ -1,9 +1,11 @@
 package com.example.horizon.ui.fragment.diary
 
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.drawable.GradientDrawable
 import android.icu.text.SimpleDateFormat
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -11,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.activity.OnBackPressedCallback
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -25,6 +28,19 @@ import com.example.horizon.viewmodel.DiaryViewModel
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import java.util.Date
 import java.util.Locale
+import android.Manifest
+import android.app.Activity
+import android.app.Activity.RESULT_OK
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.provider.MediaStore
+import android.text.Spannable
+import android.text.style.ImageSpan
+import android.widget.Toast
+import androidx.core.view.drawToBitmap
+import java.net.URI
 
 class NewDiaryHandler : Fragment() {
     private lateinit var createDiaryBinding: FragmentCreateDiaryBinding
@@ -35,6 +51,8 @@ class NewDiaryHandler : Fragment() {
     private lateinit var viewSubtitleIndicator: View
     private lateinit var diaryAdapter: diaryAdapter
     private lateinit var imageViews: List<ImageView>
+    private val REQUEST_CODE_STORAGE_PERMISSION = 1
+    private val REQUEST_CODE_SELECT_IMAGE = 2
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -64,6 +82,7 @@ class NewDiaryHandler : Fragment() {
             saveDiary()
             helper.replacetoDashboardFragment(diaryHandler(),requireFragmentManager())
         }
+        createDiaryBinding.inputdiaryTitle.requestFocus()
         viewSubtitleIndicator = createDiaryBinding.viewSubtitleIndicator
         initMiscellenous()
         setSubTitleIndicator()
@@ -131,8 +150,100 @@ class NewDiaryHandler : Fragment() {
         )
 
         setupColorClickListeners(layoutMiscellenousRoot)
+
+        createDiaryBinding.layoutMiscellenous.layoutaddImage.setOnClickListener {
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+
+            val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)
+            } else {
+                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+
+            if (permissions.any { ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED }) {
+                requestPermissions(permissions, REQUEST_CODE_STORAGE_PERMISSION)
+            } else {
+                // Permission already granted, proceed with accessing storage
+                openImagePicker()
+            }
+        }
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CODE_STORAGE_PERMISSION) {
+            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                // All required permissions are granted
+                openImagePicker()
+            } else {
+                // Permission denied
+                Toast.makeText(requireContext(), "Storage permission denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun openImagePicker() {
+        val intent = Intent(Intent.ACTION_PICK,MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        if(intent.resolveActivity(requireActivity().packageManager) != null){
+            startActivityForResult(intent, REQUEST_CODE_SELECT_IMAGE)
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CODE_SELECT_IMAGE && resultCode == Activity.RESULT_OK) {
+            data?.data?.let { uri ->
+                val selectedImageURI: Uri = uri
+                Log.d("Selected URI", selectedImageURI.toString())
+                if (selectedImageURI != null) {
+                    try {
+                        // Open InputStream from URI
+                        val inputStream = requireActivity().contentResolver.openInputStream(selectedImageURI)
+                        if (inputStream != null) {
+                            // Decode the bitmap from the input stream
+                            val bitmap = BitmapFactory.decodeStream(inputStream)
+                            // Ensure the bitmap is not null
+                            if (bitmap != null) {
+                                // Scale the bitmap to fit within the EditText
+                                val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 500, 500, false)
+                                // Create an ImageSpan from the bitmap
+                                val imageSpan = ImageSpan(requireContext(), scaledBitmap)
+                                // Get the current text in the EditText
+                                val spannableText = createDiaryBinding.inputNote.text
+                                // Check if there is any text in the EditText
+                                if (spannableText.isNotEmpty()) {
+                                    // If text exists, insert the image span at the current cursor position
+                                    val cursorPosition = createDiaryBinding.inputNote.selectionStart
+                                    // Insert the image span at the cursor position
+                                    spannableText.insert(cursorPosition, " ") // First, insert a space so the span is valid
+                                    spannableText.setSpan(imageSpan, cursorPosition, cursorPosition + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                                    // Move cursor to the end of the inserted image span
+                                    createDiaryBinding.inputNote.setSelection(cursorPosition + 1)
+                                } else {
+                                    // If text is empty, append a space and insert the image span
+                                    spannableText.append(" ") // Adding a space to the empty text
+                                    val cursorPosition = spannableText.length - 1
+                                    spannableText.setSpan(imageSpan, cursorPosition, cursorPosition + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                                    createDiaryBinding.inputNote.setSelection(cursorPosition + 1)
+                                }
+                            } else {
+                                Log.e("Bitmap Error", "Failed to decode the image into a bitmap.")
+                            }
+                        } else {
+                            Log.e("InputStream Error", "Input stream is null.")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("Error", "Error while processing image: ${e.message}")
+                        Toast.makeText(requireContext(), "Error", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
     private fun setupColorClickListeners(layoutMiscellenousRoot: View) {
         val colorMap = mapOf(
             R.id.viewcolor_1 to "#D3D3D3",
