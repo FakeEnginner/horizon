@@ -31,6 +31,7 @@ import java.util.Locale
 import android.Manifest
 import android.app.Activity
 import android.app.Activity.RESULT_OK
+import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -38,6 +39,9 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.text.Spannable
 import android.text.style.ImageSpan
+import android.util.Patterns
+import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.drawToBitmap
 import java.net.URI
@@ -47,12 +51,14 @@ class NewDiaryHandler : Fragment() {
     private var frameLayoutChanger: FrameLayoutChanger? = null
     private lateinit var diaryViewModel: DiaryViewModel
     private val helper = Helper()
-    private var selectedColor: String = "#D3D3D3" // Default color
+    private var selectedColor: String = "#D3D3D3"
     private lateinit var viewSubtitleIndicator: View
     private lateinit var diaryAdapter: diaryAdapter
     private lateinit var imageViews: List<ImageView>
     private val REQUEST_CODE_STORAGE_PERMISSION = 1
     private val REQUEST_CODE_SELECT_IMAGE = 2
+    private lateinit var dialogAddUrl: AlertDialog
+    private lateinit var dialogDeleteNote: AlertDialog
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -105,9 +111,12 @@ class NewDiaryHandler : Fragment() {
             noteText = createDiaryBinding.inputNote.text.toString(),
             dateTime = createDiaryBinding.textDateTime.text.toString(),
             imagePath = "",
-            color = selectedColor, // Store the selected color
+            color = selectedColor,
             webLink = ""
         )
+        if(createDiaryBinding.layoutWebUrl.visibility === View.VISIBLE){
+            diary.webLink = createDiaryBinding.textWebURL.text.toString()
+        }
         diaryViewModel.insert(diary)
     }
 
@@ -165,6 +174,22 @@ class NewDiaryHandler : Fragment() {
             } else {
                 // Permission already granted, proceed with accessing storage
                 openImagePicker()
+            }
+        }
+
+        createDiaryBinding.layoutMiscellenous.layoutaddUrl.setOnClickListener{
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+            showAddUrlDialog()
+        }
+        createDiaryBinding.layoutMiscellenous.layoutDeleteNoteContainer.setOnClickListener {
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+            val diaryId = arguments?.getInt("DIARY_ID")
+            diaryId?.let {
+                diaryViewModel.getDiaryById(it).observe(viewLifecycleOwner) { diary ->
+                    diary?.let {
+                        showDeleteDialog(diary)
+                    }
+                }
             }
         }
     }
@@ -273,5 +298,71 @@ class NewDiaryHandler : Fragment() {
         val gradientIndication = viewSubtitleIndicator.background as? GradientDrawable
         gradientIndication?.setColorFilter(Color.parseColor(selectedColor), PorterDuff.Mode.SRC_IN)
             ?: Log.e("Error", "Background is not a GradientDrawable")
+    }
+
+    private fun showAddUrlDialog() {
+        if (::dialogAddUrl.isInitialized.not()) {
+            val builder = AlertDialog.Builder(requireContext())
+            val view = layoutInflater.inflate(R.layout.layout_add_url, createDiaryBinding.root, false)
+
+            builder.setView(view)
+            dialogAddUrl = builder.create().apply {
+                setCancelable(true)
+                setCanceledOnTouchOutside(true)
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+            }
+
+            val inputUrl = view.findViewById<EditText>(R.id.inputUrl)
+            inputUrl.requestFocus()
+
+            view.findViewById<TextView>(R.id.textAdd).setOnClickListener {
+                val url = inputUrl.text.toString().trim()
+                when {
+                    url.isEmpty() -> {
+                        Toast.makeText(requireContext(), "Enter URL", Toast.LENGTH_SHORT).show()
+                    }
+                    !Patterns.WEB_URL.matcher(url).matches() -> {
+                        Toast.makeText(requireContext(), "Enter Valid URL", Toast.LENGTH_SHORT).show()
+                    }
+                    else -> {
+                        createDiaryBinding.textWebURL.text = url
+                        createDiaryBinding.layoutWebUrl.visibility = View.VISIBLE
+                        dialogAddUrl.dismiss()
+                    }
+                }
+            }
+
+            view.findViewById<TextView>(R.id.textCancel).setOnClickListener {
+                dialogAddUrl.dismiss()
+            }
+        }
+
+        dialogAddUrl.show()
+    }
+
+
+    private fun showDeleteDialog(diary: diary) {
+        if (::dialogDeleteNote.isInitialized.not()) {
+            val builder = AlertDialog.Builder(requireContext())
+            val view = layoutInflater.inflate(R.layout.layout_delete_note, createDiaryBinding.root, false)
+            builder.setView(view)
+            dialogDeleteNote = builder.create().apply {
+                setCancelable(true)
+                setCanceledOnTouchOutside(true)
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+            }
+
+            view.findViewById<TextView>(R.id.textDelete).setOnClickListener {
+                diaryViewModel.delete(diary)
+                dialogDeleteNote.dismiss()
+                Toast.makeText(requireContext(), "Diary entry deleted", Toast.LENGTH_SHORT).show()
+                helper.replacetoDashboardFragment(diaryHandler(),requireFragmentManager())
+            }
+
+            view.findViewById<TextView>(R.id.textDeleteCancel).setOnClickListener {
+                dialogDeleteNote.dismiss()
+            }
+        }
+        dialogDeleteNote.show()
     }
 }
