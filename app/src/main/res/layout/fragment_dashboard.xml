@@ -142,35 +142,41 @@
 
             <include
                 layout="@layout/layout_meditation"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="5dp"
                 android:layout_width="match_parent"
-                android:layout_height="200dp" />
-            <LinearLayout
+                android:layout_height="180dp" />
+            <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="10dp"
-                android:orientation="horizontal">
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:layout_marginBottom="10dp">
 
                 <TextView
                     android:id="@+id/diary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="16dp"
+                    android:fontFamily="@font/montserrat_bold_italic"
+                    android:shadowColor="#80000000"
+                    android:shadowDx="2"
+                    android:shadowDy="2"
+                    android:shadowRadius="4"
                     android:text="Personal Diary"
-                    android:textColor="@color/dark_blue"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:textColor="#371B34"
+                    android:textSize="18sp" />
 
-                <TextView
+                <ImageView
                     android:id="@+id/viewAllDiary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="View all"
-                    android:textColor="@color/dark_blue"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="16dp"
+                    android:padding="8dp"
+                    android:src="@drawable/sort" />
+            </RelativeLayout>
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/diaryRecyclerView"
                 android:layout_width="match_parent"

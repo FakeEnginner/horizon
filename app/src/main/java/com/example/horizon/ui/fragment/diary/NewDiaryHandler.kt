@@ -30,7 +30,6 @@ import java.util.Date
 import java.util.Locale
 import android.Manifest
 import android.app.Activity
-import android.app.Activity.RESULT_OK
 import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Bitmap
@@ -38,13 +37,15 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.MediaStore
 import android.text.Spannable
+import android.text.SpannableStringBuilder
 import android.text.style.ImageSpan
 import android.util.Patterns
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.view.drawToBitmap
-import java.net.URI
+import java.io.File
+import java.io.FileOutputStream
+
 
 class NewDiaryHandler : Fragment() {
     private lateinit var createDiaryBinding: FragmentCreateDiaryBinding
@@ -77,6 +78,17 @@ class NewDiaryHandler : Fragment() {
                     createDiaryBinding.inputdiarySubtitle.setText(diary.subtitle)
                     createDiaryBinding.inputNote.setText(diary.noteText)
                     createDiaryBinding.textDateTime.setText(diary.dateTime)
+                    selectedColor = diary.color
+                    setSubTitleIndicator()
+                    // Load images if there are any
+                    if (diary.imagePath.isNotEmpty()) {
+                        loadImagesIntoNote(diary.imagePath)
+                    }
+                    // Set web link if exists
+                    if (diary.webLink.isNotEmpty()) {
+                        createDiaryBinding.textWebURL.text = diary.webLink
+                        createDiaryBinding.layoutWebUrl.visibility = View.VISIBLE
+                    }
                 }
             })
         }
@@ -104,13 +116,15 @@ class NewDiaryHandler : Fragment() {
     }
 
     private fun saveDiary() {
+        val imagePaths = extractImagesFromEditText()
+        val imagePathsString = imagePaths.joinToString(",")
         val diary = diary(
             id = 0,
             title = createDiaryBinding.inputdiaryTitle.text.toString(),
             subtitle = createDiaryBinding.inputdiarySubtitle.text.toString(),
             noteText = createDiaryBinding.inputNote.text.toString(),
             dateTime = createDiaryBinding.textDateTime.text.toString(),
-            imagePath = "",
+            imagePath = imagePathsString,
             color = selectedColor,
             webLink = ""
         )
@@ -364,5 +378,79 @@ class NewDiaryHandler : Fragment() {
             }
         }
         dialogDeleteNote.show()
+    }
+
+    // Add these utility functions to your NewDiaryHandler class
+    private fun saveImageToInternalStorage(bitmap: Bitmap): String {
+        val filesDir = requireContext().filesDir
+        val imageDir = File(filesDir, "diary_images")
+        if (!imageDir.exists()) {
+            imageDir.mkdirs()
+        }
+        val imageName = "image_${System.currentTimeMillis()}.jpg"
+        val imageFile = File(imageDir, imageName)
+        try {
+            FileOutputStream(imageFile).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+            }
+            return imageFile.absolutePath
+        } catch (e: Exception) {
+            Log.e("ImageSave", "Error saving image: ${e.message}")
+            return ""
+        }
+    }
+
+    private fun extractImagesFromEditText(): List<String> {
+        val imagePaths = mutableListOf<String>()
+        val spannableText = createDiaryBinding.inputNote.text
+        val spans = spannableText.getSpans(0, spannableText.length, ImageSpan::class.java)
+        for (span in spans) {
+            val drawable = span.drawable
+            if (drawable != null) {
+                val bitmap = drawable.toBitmap()
+                val path = saveImageToInternalStorage(bitmap)
+                if (path.isNotEmpty()) {
+                    imagePaths.add(path)
+                }
+            }
+        }
+
+        return imagePaths
+    }
+
+    // Extension function to convert drawable to bitmap
+    private fun android.graphics.drawable.Drawable.toBitmap(): Bitmap {
+        val bitmap = Bitmap.createBitmap(
+            intrinsicWidth,
+            intrinsicHeight,
+            Bitmap.Config.ARGB_8888
+        )
+        val canvas = android.graphics.Canvas(bitmap)
+        setBounds(0, 0, canvas.width, canvas.height)
+        draw(canvas)
+        return bitmap
+    }
+
+    private fun loadImagesIntoNote(imagePaths: String) {
+        val paths = imagePaths.split(",").filter { it.isNotEmpty() }
+        val spannableString = SpannableStringBuilder(createDiaryBinding.inputNote.text)
+
+        for (path in paths) {
+            try {
+                val bitmap = BitmapFactory.decodeFile(path)
+                if (bitmap != null) {
+                    // Scale bitmap to fit in EditText
+                    val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 500, 500, false)
+                    val imageSpan = ImageSpan(requireContext(), scaledBitmap)
+                    // Add a space and insert the image span
+                    spannableString.append(" ")
+                    val startPosition = spannableString.length - 1
+                    spannableString.setSpan(imageSpan, startPosition, spannableString.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
+            } catch (e: Exception) {
+                Log.e("ImageLoad", "Error loading image: ${e.message}")
+            }
+        }
+        createDiaryBinding.inputNote.text = spannableString
     }
 }

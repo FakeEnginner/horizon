@@ -5,16 +5,19 @@
         android:icon="@drawable/home"/>
 
     <item android:id="@+id/camerabtn"
-        android:title="Home"
+        android:title="Session"
         android:icon="@drawable/camera"/>
 
+<!--    <item android:id="@+id/music"-->
+<!--        android:title="Session"-->
+<!--        android:icon="@drawable/music"/>-->
 
     <item android:id="@+id/messagebtn"
-        android:title="Profile"
+        android:title="Chats"
         android:icon="@drawable/message"/>
 
     <item android:id="@+id/communitybtn"
-        android:title="Setting"
+        android:title="Socialise"
         android:icon="@drawable/community"/>
 
     <item android:id="@+id/settingbtn"
