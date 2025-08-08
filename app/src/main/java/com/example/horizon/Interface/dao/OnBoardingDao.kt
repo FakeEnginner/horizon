@@ -20,5 +20,5 @@ interface onBoardingDao {
     suspend fun getOnBoardingCheckById(id: Int): onBoardingCheck?
 
     @Query("SELECT onBoardingCheck FROM onBoardingCheck WHERE id = :id LIMIT 1")
-    suspend fun isOnBoardingChecked(id: Int): Boolean
+    suspend fun isOnBoardingChecked(id: Int): Boolean?
 }

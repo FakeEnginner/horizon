@@ -6,10 +6,13 @@ import com.example.horizon.model.Database.AppDatabase
 import com.example.horizon.viewModel.OnBoardingCheckViewModel
 
 class OnBoardingCheckViewModelFactory(private val database: AppDatabase) : ViewModelProvider.Factory {
-    override  fun <T: ViewModel> create(model: Class<T>): T {
-        if(model.isAssignableFrom(OnBoardingCheckViewModel::class.java)){
-            return OnBoardingCheckViewModel(database) as T
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return when {
+            modelClass.isAssignableFrom(OnBoardingCheckViewModel::class.java) -> {
+                OnBoardingCheckViewModel(database) as T
+            }
+            else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

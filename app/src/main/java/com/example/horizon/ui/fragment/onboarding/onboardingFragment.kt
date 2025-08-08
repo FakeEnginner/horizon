@@ -19,20 +19,21 @@ import com.example.horizon.ui.fragment.login.login
 import com.example.horizon.ui.fragment.onboarding.adapter.OnboardingAdapter
 import com.example.horizon.ui.fragment.onboarding.models.OnboardingPage
 import com.example.horizon.utils.Helper
+import com.example.horizon.utils.firebaseConfig
 import com.example.horizon.viewModel.OnBoardingCheckViewModel
+import org.json.JSONException
 import org.json.JSONObject
 
 class onboardingFragment() : Fragment(), OnboardingDataListener {
-
     override val imageResourceMap: Map<String, Int> = mapOf(
-        "image1" to R.drawable.anxiety, // replace with actual drawable resource IDs
+        "image1" to R.drawable.anxiety,
         "image2" to R.drawable.yoga
     )
-
-    private lateinit var binding: FragmentOnboardingBinding
+    private  lateinit var binding: FragmentOnboardingBinding
     private lateinit var viewPager: ViewPager2
     private lateinit var onboardingAdapter: OnboardingAdapter
     private val helper = Helper()
+    private lateinit var remoteConfigManager: firebaseConfig
     private val onBoardingCheckViewModel: OnBoardingCheckViewModel by viewModels {
         OnBoardingCheckViewModelFactory((requireActivity().application as MyApplication).database)
     }
@@ -51,19 +52,20 @@ class onboardingFragment() : Fragment(), OnboardingDataListener {
 
         viewPager = binding.viewPager
         val dotsIndicator = binding.dotsIndicator
+        remoteConfigManager = firebaseConfig()
+        remoteConfigManager.setOnboardingDataListener(this)
+        remoteConfigManager.firebaseConfig(requireContext())
 
         // Sample JSON data for onboarding screens
-        val defaultConfig = """
-            {
-                "onboarding": [
-                    { "image": "image1", "description": "Welcome to the first page of onboarding." },
-                    { "image": "image2", "description": "Learn more about how to use our app." }
-                ]
-            }
-        """.trimIndent()
-
-        onBoardingDataReceived(defaultConfig)
-
+//        val defaultConfig = """
+//            {
+//                "onboarding": [
+//                    { "image": "image1", "description": "Welcome to the first page of onboarding." },
+//                    { "image": "image2", "description": "Learn more about how to use our app." }
+//                ]
+//            }
+//        """.trimIndent()
+//        onBoardingDataReceived(defaultConfig)
         // Next button functionality
         binding.btnNext.setOnClickListener {
             val nextItem = viewPager.currentItem + 1
@@ -81,26 +83,64 @@ class onboardingFragment() : Fragment(), OnboardingDataListener {
     }
 
     override fun onBoardingDataReceived(jsonString: String) {
+        if (!isAdded) {
+            Log.w(TAG, "onBoardingDataReceived called but fragment not attached or binding null.")
+            return
+        }
+        if (jsonString.isEmpty()) {
+            handleDataFetchFailure()
+            return
+        }
         val onboardingPages = mutableListOf<OnboardingPage>()
-        val jsonObject = JSONObject(jsonString)
-        val jsonArray = jsonObject.getJSONArray("onboarding")
+        try {
+            val jsonObject = JSONObject(jsonString)
+            val jsonArray = jsonObject.getJSONArray("onboarding")
 
-        for (i in 0 until jsonArray.length()) {
-            val pageObject = jsonArray.getJSONObject(i)
-            val imageId = pageObject.getString("image")
-            val description = pageObject.getString("description")
-            val imageResId = imageResourceMap[imageId] ?: R.drawable.yoga
+            for (i in 0 until jsonArray.length()) {
+                val pageObject = jsonArray.getJSONObject(i)
+                val imageId = pageObject.getString("image")
+                val description = pageObject.getString("description")
+                val imageResId = imageResourceMap[imageId] ?: R.drawable.yoga
 
-            val onboardingPage = OnboardingPage(imageResId, description)
-            onboardingPages.add(onboardingPage)
+                val onboardingPage = OnboardingPage(imageResId, description)
+                onboardingPages.add(onboardingPage)
+            }
+        }catch (e: JSONException){
+            handleDataFetchFailure()
+            return
         }
 
+        if (onboardingPages.isEmpty()) {
+            handleDataFetchFailure()
+            return
+        }
         onboardingAdapter = OnboardingAdapter(onboardingPages)
         viewPager.adapter = onboardingAdapter
         binding.dotsIndicator.setViewPager2(viewPager)
     }
 
     override fun onFetchFailed() {
-        Log.e(TAG, "Fetching onboarding data failed")
+        if (!isAdded) {
+            return
+        }
+        handleDataFetchFailure()
+    }
+    private fun handleDataFetchFailure() {
+        val fallbackPages = listOf(
+            OnboardingPage(imageResourceMap["image1"] ?: R.drawable.anxiety, "Welcome! (Fallback)"),
+            OnboardingPage(imageResourceMap["image2"] ?: R.drawable.yoga, "Discover more. (Fallback)")
+        )
+        activity?.runOnUiThread {
+            if (isAdded) {
+                onboardingAdapter = OnboardingAdapter(fallbackPages)
+                viewPager.adapter = onboardingAdapter
+                binding?.dotsIndicator!!.setViewPager2(viewPager)
+            }
+        }
+    }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        remoteConfigManager.clearListener()
+        viewPager.adapter = null
     }
 }

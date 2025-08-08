@@ -14,9 +14,9 @@ import com.example.horizon.R
 
 class firebaseConfig {
 
-    private lateinit var listener: OnboardingDataListener
+    private var listener: OnboardingDataListener? = null
 
-    fun setOnboardingDataListener(listener: OnboardingDataListener) {
+    fun setOnboardingDataListener(listener: OnboardingDataListener?) {
         this.listener = listener
     }
 
@@ -49,7 +49,7 @@ class firebaseConfig {
                     ).show()
 
                     val myValue = getValueByKey(remoteConfig, "onboarding")
-                    listener.onBoardingDataReceived(myValue)
+                    listener?.onBoardingDataReceived(myValue)
                     Log.d(TAG, "Fetched value for 'onboarding': $myValue")
                 } else {
                     Toast.makeText(
@@ -57,11 +57,14 @@ class firebaseConfig {
                         "Fetch failed",
                         Toast.LENGTH_SHORT,
                     ).show()
-                    listener.onFetchFailed()
+                    listener?.onFetchFailed()
                 }
             }
     }
     private fun getValueByKey(remoteConfig: FirebaseRemoteConfig, key: String): String {
         return remoteConfig.getString(key)
+    }
+    fun clearListener() {
+        listener = null
     }
 }

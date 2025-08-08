@@ -6,6 +6,6 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "onBoardingCheck")
 data class onBoardingCheck(
-    @PrimaryKey val id: Int= 0,
-    val onBoardingCheck: Boolean = false
+    @PrimaryKey var id: Int= 0,
+    var onBoardingCheck: Boolean = false
 )

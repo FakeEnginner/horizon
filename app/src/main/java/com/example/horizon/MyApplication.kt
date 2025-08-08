@@ -3,6 +3,7 @@ package com.example.horizon
 import android.app.Application
 import com.example.horizon.model.Database.AppDatabase
 import com.example.horizon.model.Database.DiaryDatabase
+import com.example.horizon.utils.firebaseConfig
 import timber.log.Timber
 
 class MyApplication : Application() {
@@ -12,6 +13,8 @@ class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         // Initialize Timber for logging
+        val remoteConfigManager = firebaseConfig()
+        remoteConfigManager.firebaseConfig(applicationContext)
         Timber.plant(Timber.DebugTree())
     }
 }
