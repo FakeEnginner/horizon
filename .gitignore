@@ -37,3 +37,5 @@ app/google-services.json
 /interceptor/node_modules/
 # You might also want a general one if node_modules can appear elsewhere
 node_modules/
+/vendor/
+vendor/
