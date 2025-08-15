@@ -41,3 +41,4 @@ admin/vendor/
 /admin/vendor/
 vendor/
 /vendor/
+.DS_Store
