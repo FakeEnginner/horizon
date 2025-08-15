@@ -31,3 +31,9 @@ app/google-services.json
 
 # Android Profiling
 *.hprof
+# For a node_modules at the root
+/node_modules/
+# For a node_modules inside an 'api' folder at the root
+/interceptor/node_modules/
+# You might also want a general one if node_modules can appear elsewhere
+node_modules/
