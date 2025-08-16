@@ -11,7 +11,7 @@ class LoginViewModelFactory(private val context: Context): ViewModelProvider.Fac
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
        if(modelClass.isAssignableFrom(LoginViewModel::class.java)){
            val repository = LoginRepository(context.applicationContext)
-               return LoginViewModel(repository) as T
+           return LoginViewModel(repository) as T
        }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
