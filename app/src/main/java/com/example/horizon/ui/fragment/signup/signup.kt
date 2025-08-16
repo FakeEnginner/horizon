@@ -15,7 +15,7 @@ import com.example.horizon.model.sealedClass.SignupNavigation
 import com.example.horizon.ui.fragment.dashboard.Dashboard
 import com.example.horizon.ui.fragment.login.login
 import com.example.horizon.utils.Helper
-import com.example.horizon.viewModel.SignUpViewModel
+import com.example.horizon.viewmodel.SignUpViewModel
 
 
 class signup: Fragment() {

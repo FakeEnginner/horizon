@@ -1,4 +1,4 @@
-package com.example.horizon.viewModel
+package com.example.horizon.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

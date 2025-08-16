@@ -3,7 +3,7 @@ package com.example.horizon.factory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.horizon.model.Database.AppDatabase
-import com.example.horizon.viewModel.OnBoardingCheckViewModel
+import com.example.horizon.viewmodel.OnBoardingCheckViewModel
 
 class OnBoardingCheckViewModelFactory(private val database: AppDatabase) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")

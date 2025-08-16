@@ -8,7 +8,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
 import com.example.horizon.Interface.OnboardingDataListener
@@ -17,13 +16,12 @@ import com.example.horizon.MyApplication
 import com.example.horizon.R
 import com.example.horizon.databinding.FragmentOnboardingBinding
 import com.example.horizon.factory.OnBoardingCheckViewModelFactory
-import com.example.horizon.model.onBoardingCheck
 import com.example.horizon.ui.fragment.login.login
 import com.example.horizon.ui.fragment.onboarding.adapter.OnboardingAdapter
 import com.example.horizon.ui.fragment.onboarding.models.OnboardingPage
 import com.example.horizon.utils.Helper
 import com.example.horizon.utils.firebaseConfig
-import com.example.horizon.viewModel.OnBoardingCheckViewModel // Fixed: correct package name
+import com.example.horizon.viewmodel.OnBoardingCheckViewModel // Fixed: correct package name
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -90,11 +88,7 @@ class onboardingFragment() : Fragment(), OnboardingDataListener {
     private fun completeOnboarding() {
         val sharedPrefs = requireActivity().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         sharedPrefs.edit().putBoolean("onboarding_completed", true).apply()
-
-        // Also call MainActivity method if needed
         (requireActivity() as MainActivity).markOnboardingCompleted()
-
-        // Navigate to login
         helper.replaceFragment(login(), requireFragmentManager())
     }
 

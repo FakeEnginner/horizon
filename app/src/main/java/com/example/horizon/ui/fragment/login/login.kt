@@ -18,13 +18,13 @@ import com.example.horizon.ui.fragment.forgetpassword.ForgotPassword
 import com.example.horizon.ui.fragment.signup.signup
 import com.example.horizon.utils.Helper
 import com.example.horizon.model.sealedClass.LoginNavigation
-import com.example.horizon.viewModel.LoginViewModel
+import com.example.horizon.viewmodel.LoginViewModel
 
 class login : Fragment(){
     val helper = Helper()
     private lateinit var binding : FragmentLoginBinding
     private var frameLayoutChanger: FrameLayoutChanger? = null
-    private val viewModel: LoginViewModel by viewModels { LoginViewModelFactory(LoginRepository()) }
+    private val viewModel: LoginViewModel by viewModels { LoginViewModelFactory(requireContext()) }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
