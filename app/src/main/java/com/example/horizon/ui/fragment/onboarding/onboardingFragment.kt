@@ -1,6 +1,7 @@
 package com.example.horizon.ui.fragment.onboarding
 
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -8,8 +9,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
 import com.example.horizon.Interface.OnboardingDataListener
+import com.example.horizon.MainActivity
 import com.example.horizon.MyApplication
 import com.example.horizon.R
 import com.example.horizon.databinding.FragmentOnboardingBinding
@@ -20,7 +23,7 @@ import com.example.horizon.ui.fragment.onboarding.adapter.OnboardingAdapter
 import com.example.horizon.ui.fragment.onboarding.models.OnboardingPage
 import com.example.horizon.utils.Helper
 import com.example.horizon.utils.firebaseConfig
-import com.example.horizon.viewModel.OnBoardingCheckViewModel
+import com.example.horizon.viewModel.OnBoardingCheckViewModel // Fixed: correct package name
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -29,14 +32,15 @@ class onboardingFragment() : Fragment(), OnboardingDataListener {
         "image1" to R.drawable.anxiety,
         "image2" to R.drawable.yoga
     )
-    private  lateinit var binding: FragmentOnboardingBinding
+    private lateinit var binding: FragmentOnboardingBinding
     private lateinit var viewPager: ViewPager2
     private lateinit var onboardingAdapter: OnboardingAdapter
     private val helper = Helper()
     private lateinit var remoteConfigManager: firebaseConfig
-    private val onBoardingCheckViewModel: OnBoardingCheckViewModel by viewModels {
-        OnBoardingCheckViewModelFactory((requireActivity().application as MyApplication).database)
-    }
+
+    // Fixed: Proper ViewModel initialization
+    private lateinit var onBoardingCheckViewModel: OnBoardingCheckViewModel
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -49,6 +53,10 @@ class onboardingFragment() : Fragment(), OnboardingDataListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        onBoardingCheckViewModel = ViewModelProvider(
+            this,
+            OnBoardingCheckViewModelFactory((requireActivity().application as MyApplication).database)
+        )[OnBoardingCheckViewModel::class.java]
 
         viewPager = binding.viewPager
         val dotsIndicator = binding.dotsIndicator
@@ -66,6 +74,7 @@ class onboardingFragment() : Fragment(), OnboardingDataListener {
 //            }
 //        """.trimIndent()
 //        onBoardingDataReceived(defaultConfig)
+
         // Next button functionality
         binding.btnNext.setOnClickListener {
             val nextItem = viewPager.currentItem + 1
@@ -74,12 +83,19 @@ class onboardingFragment() : Fragment(), OnboardingDataListener {
             }
         }
 
-        // Skip button functionality
         binding.skipedbtn.setOnClickListener {
-            val onBoardingCheck = onBoardingCheck(onBoardingCheck = true)
-            onBoardingCheckViewModel.insertOnBoardingCheck(onBoardingCheck)
-            helper.replaceFragment(login(), requireFragmentManager())
+            completeOnboarding()
         }
+    }
+    private fun completeOnboarding() {
+        val sharedPrefs = requireActivity().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        sharedPrefs.edit().putBoolean("onboarding_completed", true).apply()
+
+        // Also call MainActivity method if needed
+        (requireActivity() as MainActivity).markOnboardingCompleted()
+
+        // Navigate to login
+        helper.replaceFragment(login(), requireFragmentManager())
     }
 
     override fun onBoardingDataReceived(jsonString: String) {
@@ -105,7 +121,7 @@ class onboardingFragment() : Fragment(), OnboardingDataListener {
                 val onboardingPage = OnboardingPage(imageResId, description)
                 onboardingPages.add(onboardingPage)
             }
-        }catch (e: JSONException){
+        } catch (e: JSONException) {
             handleDataFetchFailure()
             return
         }
@@ -125,6 +141,7 @@ class onboardingFragment() : Fragment(), OnboardingDataListener {
         }
         handleDataFetchFailure()
     }
+
     private fun handleDataFetchFailure() {
         val fallbackPages = listOf(
             OnboardingPage(imageResourceMap["image1"] ?: R.drawable.anxiety, "Welcome! (Fallback)"),
@@ -134,10 +151,11 @@ class onboardingFragment() : Fragment(), OnboardingDataListener {
             if (isAdded) {
                 onboardingAdapter = OnboardingAdapter(fallbackPages)
                 viewPager.adapter = onboardingAdapter
-                binding?.dotsIndicator!!.setViewPager2(viewPager)
+                binding.dotsIndicator.setViewPager2(viewPager)
             }
         }
     }
+
     override fun onDestroyView() {
         super.onDestroyView()
         remoteConfigManager.clearListener()

@@ -2,7 +2,7 @@ package com.example.horizon.factory
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.horizon.Repository.LoginRepository
+import com.example.horizon.repository.LoginRepository
 import com.example.horizon.viewModel.LoginViewModel
 
 class LoginViewModelFactory(private val repository: LoginRepository): ViewModelProvider.Factory {

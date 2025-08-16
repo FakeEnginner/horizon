@@ -9,7 +9,7 @@ import androidx.fragment.app.Fragment
 import com.example.horizon.Interface.FrameLayoutChanger
 import com.example.horizon.MainActivity
 import androidx.fragment.app.viewModels
-import com.example.horizon.Repository.LoginRepository
+import com.example.horizon.repository.LoginRepository
 import com.example.horizon.databinding.FragmentLoginBinding
 import com.example.horizon.factory.LoginViewModelFactory
 import com.example.horizon.model.sealedClass.LoginResult

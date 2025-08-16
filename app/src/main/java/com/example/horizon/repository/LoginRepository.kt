@@ -1,4 +1,4 @@
-package com.example.horizon.Repository
+package com.example.horizon.repository
 
 import com.example.horizon.model.sealedClass.LoginResult
 

@@ -3,27 +3,22 @@ package com.example.horizon
 import android.os.Bundle
 import android.view.View
 import android.widget.FrameLayout
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.example.horizon.Interface.FrameLayoutChanger
 import com.example.horizon.Interface.mainFrameChange
 import com.example.horizon.databinding.ActivityMainBinding
-import com.example.horizon.factory.OnBoardingCheckViewModelFactory
-import com.example.horizon.model.onBoardingCheck
-import com.example.horizon.privacy.DeveloperOption
-import com.example.horizon.privacy.Rooted
 import com.example.horizon.ui.fragment.login.login
 import com.example.horizon.ui.fragment.onboarding.onboardingFragment
 import com.example.horizon.utils.Helper
 import com.example.horizon.utils.Internet_connectivity
 import com.example.horizon.utils.firebaseConfig
-import com.example.horizon.viewModel.OnBoardingCheckViewModel
 import timber.log.Timber
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.example.horizon.privacy.DeveloperOption
+import com.example.horizon.privacy.Rooted
 import com.example.horizon.ui.fragment.dashboard.Dashboard
 import com.example.horizon.ui.fragment.upcomingSession.upcoming
 import com.example.horizon.ui.fragment.wellnessHub.wellness
-import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity(), FrameLayoutChanger, mainFrameChange {
 
@@ -40,12 +35,6 @@ class MainActivity : AppCompatActivity(), FrameLayoutChanger, mainFrameChange {
     private val internetConnectivity = Internet_connectivity()
     private var frameLayoutChanger: FrameLayoutChanger? = null
 
-
-    // ViewModel for OnBoarding
-    private val onBoardingCheckViewModel: OnBoardingCheckViewModel by viewModels {
-        OnBoardingCheckViewModelFactory((application as MyApplication).database)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -59,8 +48,8 @@ class MainActivity : AppCompatActivity(), FrameLayoutChanger, mainFrameChange {
         // Setup initial UI visibility
         setupInitialUIVisibility()
 
-        // Check and handle onboarding status
-        checkOnBoardingStatus()
+        // Temporary: Use SharedPreferences instead of ViewModel
+        checkOnBoardingStatusWithPrefs()
 
         // Check for device security settings
         performSecurityChecks()
@@ -81,22 +70,27 @@ class MainActivity : AppCompatActivity(), FrameLayoutChanger, mainFrameChange {
     }
 
     /**
-     * Checks the onboarding status and navigates to the appropriate fragment
+     * Temporary solution using SharedPreferences instead of ViewModel
      */
-    private fun checkOnBoardingStatus() {
-        val initialOnBoardingCheck = onBoardingCheck(onBoardingCheck = false)
+    private fun checkOnBoardingStatusWithPrefs() {
+        val sharedPrefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        val isOnboardingCompleted = sharedPrefs.getBoolean("onboarding_completed", false)
 
-        onBoardingCheckViewModel.getOnBoardingCheckById(0) { onBoardingCheck ->
-            if (onBoardingCheck == null) {
-                onBoardingCheckViewModel.insertOnBoardingCheck(initialOnBoardingCheck)
-                helper.replaceFragment(onboardingFragment(), supportFragmentManager)
-            } else {
-                onBoardingCheckViewModel.isOnBoardingChecked(0) { isChecked ->
-                    val fragment = if (isChecked) login() else onboardingFragment()
-                    helper.replaceFragment(fragment, supportFragmentManager)
-                }
-            }
+        if (isOnboardingCompleted) {
+            // User has completed onboarding, go to login
+            helper.replaceFragment(login(), supportFragmentManager)
+        } else {
+            // First time or incomplete onboarding, show onboarding
+            helper.replaceFragment(onboardingFragment(), supportFragmentManager)
         }
+    }
+
+    /**
+     * Call this method when onboarding is completed
+     */
+    fun markOnboardingCompleted() {
+        val sharedPrefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        sharedPrefs.edit().putBoolean("onboarding_completed", true).apply()
     }
 
     /**
@@ -204,6 +198,5 @@ class MainActivity : AppCompatActivity(), FrameLayoutChanger, mainFrameChange {
                 else -> false
             }
         }
-
     }
 }

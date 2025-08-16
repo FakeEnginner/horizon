@@ -8,7 +8,6 @@ import kotlinx.coroutines.launch
 
 class OnBoardingCheckViewModel(private val database: AppDatabase) : ViewModel() {
 
-
     fun insertOnBoardingCheck(onBoardingCheck: onBoardingCheck) {
         viewModelScope.launch {
             database.onBoardingDao().insert(onBoardingCheck)
@@ -30,9 +29,8 @@ class OnBoardingCheckViewModel(private val database: AppDatabase) : ViewModel() 
 
     fun isOnBoardingChecked(id: Int, callback: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val result =  database.onBoardingDao().isOnBoardingChecked(id)
+            val result = database.onBoardingDao().isOnBoardingChecked(id)
             callback(result ?: false)
         }
     }
-
 }

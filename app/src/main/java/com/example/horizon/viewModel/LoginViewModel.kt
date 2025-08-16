@@ -4,7 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.horizon.Repository.LoginRepository
+import com.example.horizon.repository.LoginRepository
 import com.example.horizon.model.sealedClass.LoginNavigation
 import com.example.horizon.model.sealedClass.LoginResult
 import kotlinx.coroutines.launch

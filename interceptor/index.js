@@ -85,7 +85,7 @@ http.listen(port, function () {
         }
  
         // database name
-        global.db = client.db("android_chat_app")
+        global.db = client.db("horizon")
         console.log("Database connected")
 
         app.post("/change-password", auth, async function (request, result) {
@@ -381,22 +381,90 @@ http.listen(port, function () {
         })
 
         // route for logout request
-        app.post("/logout", auth, async function (request, result) {
-            const user = request.user
-         
-            // update JWT of user in database
-            await db.collection("users").findOneAndUpdate({
-                _id: user._id
-            }, {
-                $set: {
-                    accessToken: ""
+        app.post("/logout", async function (request, result) {
+            const accessToken = request.headers.authorization
+
+            if (!accessToken) {
+                result.json({
+                    status: "error",
+                    message: "Access token is required."
+                })
+                return
+            }
+
+            try {
+                // Verify and decode JWT
+                const decoded = jwt.verify(accessToken.replace('Bearer ', ''), jwtSecret)
+
+                // Clear access token from database
+                await db.collection("users").findOneAndUpdate({
+                    _id: new ObjectId(decoded.userId)
+                }, {
+                    $set: {
+                        accessToken: "",
+                        lastLogout: new Date().toUTCString()
+                    }
+                })
+
+                result.json({
+                    status: "success",
+                    message: "Logged out successfully."
+                })
+            } catch (error) {
+                console.error("Logout error:", error)
+                result.json({
+                    status: "error",
+                    message: "Invalid access token."
+                })
+            }
+        })
+
+        app.post("/verify-token", async function (request, result) {
+            const accessToken = request.headers.authorization
+
+            if (!accessToken) {
+                result.json({
+                    status: "error",
+                    message: "Access token is required."
+                })
+                return
+            }
+
+            try {
+                // Verify JWT
+                const decoded = jwt.verify(accessToken.replace('Bearer ', ''), jwtSecret)
+
+                // Get user from database
+                const user = await db.collection("users").findOne({
+                    _id: new ObjectId(decoded.userId),
+                    accessToken: accessToken.replace('Bearer ', '')
+                })
+
+                if (!user) {
+                    result.json({
+                        status: "error",
+                        message: "Invalid or expired token."
+                    })
+                    return
                 }
-            })
-         
-            result.json({
-                status: "success",
-                message: "Logout successfully."
-            })
+
+                result.json({
+                    status: "success",
+                    message: "Token is valid.",
+                    user: {
+                        _id: user._id,
+                        username: user.username,
+                        profileImage: user.profileImage,
+                        createdAt: user.createdAt
+                    }
+                })
+            } catch (error) {
+                console.error("Token verification error:", error)
+                result.json({
+                    status: "error",
+                    message: "Invalid or expired token."
+                })
+            }
         })
 
         app.post("/me", auth, async function (request, result) {
@@ -415,151 +483,149 @@ http.listen(port, function () {
         })
 
         // route for login requests
-        app.post("/login", async function (request, result) {
-         
-            // get values from login form
-            const email = request.fields.email
+       app.post("/login", async function (request, result) {
+         const username = request.fields.username
+         const password = request.fields.password
+         if (!username || !password) {
+             result.json({
+                 status: "error",
+                 message: "Please fill all fields."
+             })
+             return
+         }
+         try {
+             const user = await db.collection("users").findOne({
+                 username: username
+             })
+             if (user == null) {
+                 result.json({
+                     status: "error",
+                     message: "Username does not exist."
+                 })
+                 return
+             }
+             if (!user.isVerified) {
+                 result.json({
+                     status: "verificationRequired",
+                     message: "Please verify your account first."
+                 })
+                 return
+             }
+             const isVerify = bcryptjs.compareSync(password, user.password)
+             if (isVerify) {
+                 const accessToken = jwt.sign({
+                     userId: user._id.toString(),
+                     username: user.username,
+                     time: new Date().getTime()
+                 }, jwtSecret, {
+                     expiresIn: (60 * 60 * 24 * 30)
+                 })
+                 await db.collection("users").findOneAndUpdate({
+                     username: username
+                 }, {
+                     $set: {
+                         accessToken: accessToken,
+                         lastLogin: new Date().toUTCString()
+                     }
+                 })
+                 result.json({
+                     status: "success",
+                     message: "Login successful.",
+                     accessToken: accessToken,
+                     user: {
+                         _id: user._id,
+                         username: user.username,
+                         profileImage: user.profileImage,
+                         createdAt: user.createdAt
+                     }
+                 })
+                 return
+             }
+             result.json({
+                 status: "error",
+                 message: "Password is not correct."
+             })
+         } catch (error) {
+             console.error("Login error:", error)
+             result.json({
+                 status: "error",
+                 message: "An error occurred during login. Please try again."
+             })
+         }
+     })
+       app.post("/register", async function (request, result) {
+            const username = request.fields.username
             const password = request.fields.password
-
-            if (!email || !password) {
-                result.json({
-                    status: "error",
-                    message: "Please fill all fields."
-                })
-
-                return
-            }
-         
-            // check if email exists
-            const user = await db.collection("users").findOne({
-                email: email
-            })
-         
-            if (user == null) {
-                result.json({
-                    status: "error",
-                    message: "Email does not exists."
-                })
-
-                return
-            }
-
-            if (!user.isVerified) {
-                result.json({
-                    status: "verificationRequired",
-                    message: "Please verify your email first."
-                })
-
-                return
-            }
-
-            // check if password is correct
-            const isVerify = await bcryptjs.compareSync(password, user.password)
-
-            if (isVerify) {
-         
-                // generate JWT of user
-                const accessToken = jwt.sign({
-                    userId: user._id.toString(),
-                    time: new Date().getTime()
-                }, jwtSecret, {
-                    expiresIn: (60 * 60 * 24 * 30) // 30 days
-                })
-     
-                // update JWT of user in database
-                await db.collection("users").findOneAndUpdate({
-                    email: email
-                }, {
-                    $set: {
-                        accessToken: accessToken
-                    }
-                })
-     
-                result.json({
-                    status: "success",
-                    message: "Login successfully.",
-                    accessToken: accessToken,
-                    user: {
-                        _id: user._id,
-                        name: user.name,
-                        email: user.email,
-                        profileImage: user.profileImage
-                    }
-                })
-     
-                return
-            }
-     
-            result.json({
-                status: "error",
-                message: "Password is not correct."
-            })
-        })
-
-        app.post("/register", async function (request, result) {
-            const name = request.fields.name
-            const phone = request.fields.phone
-            const password = request.fields.password
+            const confirmPassword = request.fields.confirmPassword
             const createdAt = new Date().toUTCString()
-     
-            if (!name || !phone || !password) {
+
+            // Validate required fields
+            if (!username || !password || !confirmPassword) {
                 result.json({
                     status: "error",
                     message: "Please enter all values."
                 })
-
                 return
             }
-     
-            // check if phone already exists
-            const user = await db.collection("users").findOne({
-                phone: phone
-            })
-     
-            if (user != null) {
+
+            // Check if passwords match
+            if (password !== confirmPassword) {
                 result.json({
                     status: "error",
-                    message: "Phone already exists."
+                    message: "Passwords do not match."
                 })
-
                 return
             }
 
-            const salt = bcryptjs.genSaltSync(10)
-            const hash = await bcryptjs.hashSync(password, salt)
+            // Check password strength (optional - add your own requirements)
+            if (password.length < 6) {
+                result.json({
+                    status: "error",
+                    message: "Password must be at least 6 characters long."
+                })
+                return
+            }
 
-            const minimum = 0
-            const maximum = 999999
-            const verificationToken = Math.floor(Math.random() * (maximum - minimum + 1)) + minimum
-            
-            // insert in database
-            await db.collection("users").insertOne({
-                name: name,
-                phone: phone,
-                password: hash,
-                accessToken: "",
-                createdAt: createdAt
-            })
+            try {
+                // Check if username already exists
+                const existingUser = await db.collection("users").findOne({
+                    username: username
+                })
 
-            // const emailHtml = "Your email verification code is: <b style='font-size: 30px;'>" + verificationToken + "</b>."
-            // const emailPlain = "Your email verification code is: " + verificationToken + "."
+                if (existingUser != null) {
+                    result.json({
+                        status: "error",
+                        message: "Username already exists."
+                    })
+                    return
+                }
 
-            // transport.sendMail({
-            //     from: nodemailerFrom,
-            //     to: email,
-            //     subject: "Email verification",
-            //     text: emailPlain,
-            //     html: emailHtml
-            // }, function (error, info) {
-            //     console.log("Email sent: ", info)
-            // })
- 
-            result.json({
-                status: "success",
-                message: "Account has been created."
-            })
+                // Hash the password
+                const salt = bcryptjs.genSaltSync(10)
+                const hash = bcryptjs.hashSync(password, salt)
+
+                // Insert user in database
+                await db.collection("users").insertOne({
+                    username: username,
+                    password: hash,
+                    accessToken: "",
+                    createdAt: createdAt,
+                    profileImage: null,
+                    isVerified: true // Set to false if you want email verification
+                })
+
+                result.json({
+                    status: "success",
+                    message: "Account has been created successfully."
+                })
+            } catch (error) {
+                console.error("Registration error:", error)
+                result.json({
+                    status: "error",
+                    message: "Failed to create account. Please try again."
+                })
+            }
         })
-
         app.get("/change-password", function (request, result) {
             result.render("change-password", {
                 mainURL: mainURL

@@ -4,14 +4,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.example.horizon.Interface.FrameLayoutChanger
 import com.example.horizon.MainActivity
-import com.example.horizon.R
-import com.example.horizon.Repository.SignupRepository
 import com.example.horizon.databinding.FragmentSignupBinding
 import com.example.horizon.factory.SignUpViewModelFactory
 import com.example.horizon.model.sealedClass.SignUpResult
@@ -26,8 +22,9 @@ class signup: Fragment() {
     val helper = Helper()
     lateinit var binding: FragmentSignupBinding
     private var frameLayoutChanger: FrameLayoutChanger? = null
-    private val viewModel: SignUpViewModel by viewModels { SignUpViewModelFactory(SignupRepository())}
-
+    private val viewModel: SignUpViewModel by viewModels {
+        SignUpViewModelFactory(requireContext())
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
     }
