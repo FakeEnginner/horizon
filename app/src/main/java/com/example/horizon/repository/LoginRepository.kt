@@ -1,6 +1,7 @@
 package com.example.horizon.repository
 
 import android.content.Context
+import android.util.JsonToken
 import android.util.Log
 import com.android.volley.Request
 import com.android.volley.RequestQueue
@@ -8,12 +9,14 @@ import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.example.horizon.model.sealedClass.LoginResult
+import com.example.horizon.utils.MySharedPrefrence
 import com.example.horizon.utils.Utility
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
+data class LoginResponse(var message: String, var status: String, var accessToken: String ="")
 
 class LoginRepository(private val context: Context) {
     private val requestQueue: RequestQueue by lazy {
@@ -40,10 +43,12 @@ class LoginRepository(private val context: Context) {
                         try {
                             val gson = Gson()
                             val generalResponse =
-                                gson.fromJson(responseString, GeneralResponse::class.java)
+                                gson.fromJson(responseString, LoginResponse::class.java)
 
                             if (generalResponse?.status == "success") {
                                 continuation.resume(LoginResult.Success)
+                                val prefrence : MySharedPrefrence = MySharedPrefrence()
+                                prefrence.setAccessToken(context, generalResponse.accessToken)
                             } else {
                                 continuation.resume(
                                     LoginResult.Error(

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="80dp"
+    android:viewportWidth="120"
+    android:viewportHeight="80">
+
+    <!-- Chat bubble 1 (larger, left side) -->
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M20,25 Q20,20 25,20 L45,20 Q50,20 50,25 L50,40 Q50,45 45,45 L30,45 L25,50 L25,45 Q20,45 20,40 Z" />
+
+    <!-- Chat bubble 2 (smaller, right side) -->
+    <path
+        android:fillColor="#5DADE2"
+        android:pathData="M65,15 Q65,10 70,10 L85,10 Q90,10 90,15 L90,25 Q90,30 85,30 L75,30 L80,35 L75,30 Q70,30 70,25 Z" />
+
+    <!-- Chat lines in bubble 1 (using path instead of rect) -->
+    <path
+        android:fillColor="#BBDEFB"
+        android:pathData="M25,28 L45,28 L45,30 L25,30 Z" />
+    <path
+        android:fillColor="#BBDEFB"
+        android:pathData="M25,33 L40,33 L40,35 L25,35 Z" />
+    <path
+        android:fillColor="#BBDEFB"
+        android:pathData="M25,38 L43,38 L43,40 L25,40 Z" />
+
+    <!-- Chat lines in bubble 2 (using path instead of rect) -->
+    <path
+        android:fillColor="#ffffff"
+        android:pathData="M72,18 L84,18 L84,20 L72,20 Z" />
+    <path
+        android:fillColor="#ffffff"
+        android:pathData="M72,22 L82,22 L82,24 L72,24 Z" />
+
+    <!-- Plant/leaf decoration (left) -->
+    <path
+        android:fillColor="#81C784"
+        android:pathData="M10,55 Q5,50 10,45 Q15,50 10,55 Z" />
+    <path
+        android:fillColor="#A5D6A7"
+        android:pathData="M15,60 Q10,55 15,50 Q20,55 15,60 Z" />
+
+    <!-- Plant/leaf decoration (right) -->
+    <path
+        android:fillColor="#81C784"
+        android:pathData="M100,60 Q105,55 110,60 Q105,65 100,60 Z" />
+    <path
+        android:fillColor="#A5D6A7"
+        android:pathData="M95,65 Q100,60 105,65 Q100,70 95,65 Z" />
+
+</vector>

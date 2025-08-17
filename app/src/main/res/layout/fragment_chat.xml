@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F8F9FA">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="44dp"
+        android:layout_marginStart="29dp"
+        android:layout_marginEnd="29dp">
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/titleText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Your Chats"
+            android:textSize="32sp"
+            android:textColor="#5DADE2"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Toggle Button Layout -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="24dp">
+
+            <ToggleButton
+                android:id="@+id/asPeerToggle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="As Peer"
+                android:textOff="As Peer"
+                android:textOn="As Peer"
+                android:textSize="20sp"
+                android:textColor="#2C3E50"
+                android:fontFamily="sans-serif-medium"
+                android:background="@drawable/toggle_background_selected"
+                android:checked="true"
+                android:paddingBottom="8dp" />
+
+            <ToggleButton
+                android:id="@+id/favouritesToggle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Favourites"
+                android:textOff="Favourites"
+                android:textOn="Favourites"
+                android:textSize="20sp"
+                android:textColor="#BDC3C7"
+                android:fontFamily="sans-serif-medium"
+                android:background="@drawable/toggle_background_unselected"
+                android:checked="false"
+                android:paddingBottom="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Content Container FrameLayout for Page Switching -->
+    <FrameLayout
+        android:id="@+id/contentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginStart="29dp"
+        android:layout_marginEnd="29dp">
+
+        <!-- As Peer Content (Default visible) -->
+        <LinearLayout
+            android:id="@+id/asPeerContent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="visible">
+
+            <!-- Empty State Illustration -->
+            <RelativeLayout
+                android:layout_width="200dp"
+                android:layout_height="150dp"
+                android:layout_marginBottom="32dp">
+
+                <!-- Background circle -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/circle_background_light_gray" />
+
+                <!-- Chat bubbles and plants illustration would go here -->
+                <!-- This would typically be an ImageView with a vector drawable -->
+                <ImageView
+                    android:layout_width="120dp"
+                    android:layout_height="80dp"
+                    android:layout_centerInParent="true"
+                    android:src="@drawable/ic_empty_chat_illustration"
+                    app:tint="#5DADE2" />
+
+                <!-- Notification badge -->
+                <TextView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:background="@drawable/circle_background_orange"
+                    android:text="0"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center" />
+
+            </RelativeLayout>
+
+            <!-- No Chats Text -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No Chats"
+                android:textSize="28sp"
+                android:textColor="#2C3E50"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Description Text -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Save and reconnect with your favourite\nmWarriors to continue your conversation later."
+                android:textSize="16sp"
+                android:textColor="#7F8C8D"
+                android:fontFamily="sans-serif"
+                android:gravity="center"
+                android:lineSpacingExtra="4dp" />
+
+        </LinearLayout>
+
+        <!-- Favourites Content (Hidden by default) -->
+        <LinearLayout
+            android:id="@+id/favouritesContent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <!-- Favourites Empty State -->
+            <RelativeLayout
+                android:layout_width="200dp"
+                android:layout_height="150dp"
+                android:layout_marginBottom="32dp">
+
+                <!-- Background circle -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/circle_background_light_gray" />
+
+                <!-- Favourites illustration -->
+                <ImageView
+                    android:layout_width="120dp"
+                    android:layout_height="80dp"
+                    android:layout_centerInParent="true"
+                    android:src="@drawable/ic_favourites_illustration"
+                    app:tint="#E74C3C" />
+
+            </RelativeLayout>
+
+            <!-- No Favourites Text -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No Favourites"
+                android:textSize="28sp"
+                android:textColor="#2C3E50"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Favourites Description Text -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Your favourite conversations will\nappear here for quick access."
+                android:textSize="16sp"
+                android:textColor="#7F8C8D"
+                android:fontFamily="sans-serif"
+                android:gravity="center"
+                android:lineSpacingExtra="4dp" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+
+
+</LinearLayout>

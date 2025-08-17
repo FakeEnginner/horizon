@@ -16,6 +16,7 @@ import timber.log.Timber
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.horizon.privacy.DeveloperOption
 import com.example.horizon.privacy.Rooted
+import com.example.horizon.ui.fragment.chat.chat
 import com.example.horizon.ui.fragment.dashboard.Dashboard
 import com.example.horizon.ui.fragment.upcomingSession.upcoming
 import com.example.horizon.ui.fragment.wellnessHub.wellness
@@ -179,8 +180,8 @@ class MainActivity : AppCompatActivity(), FrameLayoutChanger, mainFrameChange {
                 }
                 R.id.messagebtn -> {
                     frameLayoutChanger?.replaceFrameLayout()
+                    helper?.replacetoDashboardFragment(chat(),supportFragmentManager)
                     showDashboardContainer()
-//                  loadFragment(NotificationsFragment())
                     true
                 }
                 R.id.communitybtn -> {
