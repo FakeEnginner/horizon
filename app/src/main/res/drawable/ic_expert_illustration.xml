@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp"
+    android:height="80dp"
+    android:viewportWidth="80"
+    android:viewportHeight="80">
+
+    <!-- Expert person illustration -->
+    <!-- Head (using path instead of circle) -->
+    <path
+        android:fillColor="#FFDBCB"
+        android:pathData="M40,13 C46.63,13 52,18.37 52,25 C52,31.63 46.63,37 40,37 C33.37,37 28,31.63 28,25 C28,18.37 33.37,13 40,13 Z" />
+
+    <!-- Hair -->
+    <path
+        android:fillColor="#8B4513"
+        android:pathData="M28,20 Q40,8 52,20 Q52,15 40,13 Q28,15 28,20 Z" />
+
+    <!-- Body -->
+    <path
+        android:fillColor="#4FC3F7"
+        android:pathData="M30,37 L50,37 Q60,37 60,47 L60,52 Q60,62 50,62 L30,62 Q20,62 20,52 L20,47 Q20,37 30,37 Z" />
+
+    <!-- Lab coat -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M28,35 L52,35 Q64,35 64,47 L64,51 Q64,63 52,63 L28,63 Q16,63 16,51 L16,47 Q16,35 28,35 Z" />
+
+    <!-- Stethoscope -->
+    <path
+        android:fillColor="#2196F3"
+        android:strokeColor="#2196F3"
+        android:strokeWidth="2"
+        android:pathData="M35,45 Q30,50 35,55" />
+    <!-- Stethoscope end piece -->
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M35,52 C37.21,52 39,53.79 39,56 C39,58.21 37.21,60 35,60 C32.79,60 31,58.21 31,56 C31,53.79 32.79,52 35,52 Z" />
+
+    <!-- Arms -->
+    <path
+        android:fillColor="#FFDBCB"
+        android:pathData="M24,40 L30,40 Q33,40 33,43 L33,55 Q33,58 30,58 L24,58 Q21,58 21,55 L21,43 Q21,40 24,40 Z" />
+    <path
+        android:fillColor="#FFDBCB"
+        android:pathData="M50,40 L56,40 Q59,40 59,43 L59,55 Q59,58 56,58 L50,58 Q47,58 47,55 L47,43 Q47,40 50,40 Z" />
+
+    <path
+        android:fillColor="#2196F3"
+        android:strokeColor="#2196F3"
+        android:strokeWidth="1"
+        android:pathData="M52,45 L60,45 L60,57 L52,57 Z" />
+
+</vector>

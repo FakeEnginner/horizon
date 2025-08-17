@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp"
+    android:height="80dp"
+    android:viewportWidth="80"
+    android:viewportHeight="80">
+
+    <!-- Two friends illustration -->
+    <!-- Person 1 -->
+    <!-- Head 1 (using path instead of circle) -->
+    <path
+        android:fillColor="#FFDBCB"
+        android:pathData="M30,15 C35.52,15 40,19.48 40,25 C40,30.52 35.52,35 30,35 C24.48,35 20,30.52 20,25 C20,19.48 24.48,15 30,15 Z" />
+
+    <!-- Hair 1 -->
+    <path
+        android:fillColor="#4A148C"
+        android:pathData="M20,22 Q30,12 40,22 Q40,18 30,16 Q20,18 20,22 Z" />
+
+    <!-- Body 1 (using path instead of rect with rx) -->
+    <path
+        android:fillColor="#FFC107"
+        android:pathData="M22,35 L38,35 Q46,35 46,43 L46,47 Q46,55 38,55 L22,55 Q14,55 14,47 L14,43 Q14,35 22,35 Z" />
+
+    <!-- Person 2 -->
+    <!-- Head 2 (using path instead of circle) -->
+    <path
+        android:fillColor="#D7CCC8"
+        android:pathData="M50,15 C55.52,15 60,19.48 60,25 C60,30.52 55.52,35 50,35 C44.48,35 40,30.52 40,25 C40,19.48 44.48,15 50,15 Z" />
+
+    <!-- Hair 2 -->
+    <path
+        android:fillColor="#795548"
+        android:pathData="M40,22 Q50,12 60,22 Q60,18 50,16 Q40,18 40,22 Z" />
+
+    <!-- Body 2 (using path instead of rect with rx) -->
+    <path
+        android:fillColor="#E91E63"
+        android:pathData="M42,35 L58,35 Q66,35 66,43 L66,47 Q66,55 58,55 L42,55 Q34,55 34,47 L34,43 Q34,35 42,35 Z" />
+
+    <!-- Arms for Person 1 -->
+    <path
+        android:fillColor="#FFDBCB"
+        android:pathData="M18,38 L22,38 Q24,38 24,40 L24,48 Q24,50 22,50 L18,50 Q16,50 16,48 L16,40 Q16,38 18,38 Z" />
+    <path
+        android:fillColor="#FFDBCB"
+        android:pathData="M36,38 L40,38 Q42,38 42,40 L42,48 Q42,50 40,50 L36,50 Q34,50 34,48 L34,40 Q34,38 36,38 Z" />
+
+    <!-- Arms for Person 2 -->
+    <path
+        android:fillColor="#D7CCC8"
+        android:pathData="M38,38 L42,38 Q44,38 44,40 L44,48 Q44,50 42,50 L38,50 Q36,50 36,48 L36,40 Q36,38 38,38 Z" />
+    <path
+        android:fillColor="#D7CCC8"
+        android:pathData="M56,38 L60,38 Q62,38 62,40 L62,48 Q62,50 60,50 L56,50 Q54,50 54,48 L54,40 Q54,38 56,38 Z" />
+
+    <!-- Chat bubbles -->
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M15,55 Q15,50 20,50 L25,50 Q30,50 30,55 L30,60 Q30,65 25,65 L22,65 L20,68 L20,65 Q15,65 15,60 Z" />
+
+    <path
+        android:fillColor="#FFF3E0"
+        android:pathData="M50,55 Q50,50 55,50 L60,50 Q65,50 65,55 L65,60 Q65,65 60,65 L57,65 L55,68 L55,65 Q50,65 50,60 Z" />
+
+</vector>

@@ -27,6 +27,7 @@ class chat : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        showHappinessJourneyBottomSheet()
         setupToggleButtons()
         showAsPeerContent()
     }
@@ -48,26 +49,21 @@ class chat : Fragment() {
                 updateToggleButtonStyles(false, true)
             }
         }
-
-        // Handle case where both toggles become unchecked
         _binding.asPeerToggle.setOnClickListener {
             if (!_binding.asPeerToggle.isChecked && !_binding.favouritesToggle.isChecked) {
                 _binding.asPeerToggle.isChecked = true
             }
         }
-
         _binding.favouritesToggle.setOnClickListener {
             if (!_binding.asPeerToggle.isChecked && !_binding.favouritesToggle.isChecked) {
                 _binding.favouritesToggle.isChecked = true
             }
         }
     }
-
     private fun showAsPeerContent() {
         _binding.asPeerContent.visibility = View.VISIBLE
         _binding.favouritesContent.visibility = View.GONE
     }
-
     private fun showFavouritesContent() {
         _binding.asPeerContent.visibility = View.GONE
         _binding.favouritesContent.visibility = View.VISIBLE
@@ -88,6 +84,25 @@ class chat : Fragment() {
             _binding.favouritesToggle.setTextColor(ContextCompat.getColor(requireContext(), R.color.inactive_text_color))
             _binding.favouritesToggle.setBackgroundResource(R.drawable.toggle_background_unselected)
         }
+    }
+    private fun showHappinessJourneyBottomSheet() {
+        val bottomSheet = HappinessJourneyBottomSheet.newInstance()
+        bottomSheet.setOnSelectionListener(object : HappinessJourneyBottomSheet.OnSelectionListener {
+            override fun onExpertSelected() {
+                navigateToExpertSelection()
+            }
+            override fun onFriendSelected() {
+                navigateToFriendMatching()
+            }
+        })
+        bottomSheet.show(childFragmentManager, HappinessJourneyBottomSheet.TAG)
+    }
+    private fun navigateToExpertSelection() {
+        // Implementation for expert navigation
+    }
+
+    private fun navigateToFriendMatching() {
+        // Implementation for friend navigation
     }
 
     override fun onDestroyView() {
