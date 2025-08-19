@@ -31,6 +31,12 @@
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan" />
         <activity
+            android:name=".ui.activity.HybridVideoPlayer"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:screenOrientation="sensor"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:theme="@style/Theme.App.SplashScreen"
             android:exported="true"

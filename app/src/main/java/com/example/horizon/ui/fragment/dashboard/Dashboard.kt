@@ -1,11 +1,13 @@
 package com.example.horizon.ui.fragment.dashboard
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -19,6 +21,7 @@ import com.example.horizon.model.bannerModel
 import com.example.horizon.model.blogModel
 import com.example.horizon.model.entities.diary
 import com.example.horizon.model.trendeningModel
+import com.example.horizon.ui.activity.HybridVideoPlayer
 import com.example.horizon.ui.fragment.dashboard.adapter.bannerAdapter
 import com.example.horizon.ui.fragment.dashboard.adapter.blogAdapter
 import com.example.horizon.ui.fragment.diary.NewDiaryHandler
@@ -57,6 +60,17 @@ class Dashboard: Fragment() ,diaryAdapter.OnItemClickListener{
         binding = FragmentDashboardBinding.inflate(layoutInflater, container, false)
         binding.viewAllDiary.setOnClickListener {
             helper.replacetoDashboardFragment(diaryHandler(),requireFragmentManager())
+        }
+        binding.peerMeetingrcy.videobtn.setOnClickListener{
+            val iframe = """<iframe 
+                src="https://www.youtube.com/embed/tgbNymZ7vqY" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen>
+            </iframe>""".trimIndent()
+            val intent = Intent(requireActivity(), HybridVideoPlayer::class.java)
+            intent.putExtra("iframe_url", iframe)
+            startActivity(intent)
         }
         return binding.root
     }
