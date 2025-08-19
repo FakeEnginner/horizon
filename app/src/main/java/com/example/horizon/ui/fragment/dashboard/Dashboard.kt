@@ -61,7 +61,7 @@ class Dashboard: Fragment() ,diaryAdapter.OnItemClickListener{
         binding.viewAllDiary.setOnClickListener {
             helper.replacetoDashboardFragment(diaryHandler(),requireFragmentManager())
         }
-        binding.peerMeetingrcy.videobtn.setOnClickListener{
+        binding.meditationrcy.playtime.setOnClickListener{
             val iframe = """<iframe 
                 src="https://www.youtube.com/embed/tgbNymZ7vqY" 
                 frameborder="0" 
