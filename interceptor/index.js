@@ -1,695 +1,296 @@
-// include express framework
+// --- Dependencies ---
 const express = require("express")
- 
-// create an instance of it
-const app = express()
- 
-// create http server from express instance
-const http = require("http").createServer(app)
- 
-// database module
+const http = require("http")
 const mongodb = require("mongodb")
- 
-// client used to connect with database
+const expressFormidable = require("express-formidable")
+const fs = require("fs")
+const bcryptjs = require("bcryptjs")
+const jwt = require("jsonwebtoken")
+const nodemailer = require("nodemailer")
+
+// --- Constants ---
+const app = express()
+const server = http.createServer(app)
 const MongoClient = mongodb.MongoClient
- 
-// each Mongo document's unique ID
 const ObjectId = mongodb.ObjectId
 
-// Add headers before the routes are defined
-app.use(function (req, res, next) {
- 
-    // Website you wish to allow to connect
-    res.setHeader("Access-Control-Allow-Origin", "*")
- 
-    // Request methods you wish to allow
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, PATCH, DELETE")
- 
-    // Request headers you wish to allow
-    res.setHeader("Access-Control-Allow-Headers", "X-Requested-With,content-type,Authorization")
- 
-    // Set to true if you need the website to include cookies in the requests sent
-    // to the API (e.g. in case you use sessions)
-    res.setHeader("Access-Control-Allow-Credentials", true)
- 
-    // Pass to next layer of middleware
-    next()
-})
+const PORT = process.env.PORT || 3000
+const DB_URI = "mongodb://localhost:27017"
+const DB_NAME = "horizon"
+const JWT_SECRET = "jwtSecret1234567890"
+const MAIN_URL = `http://localhost:${PORT}`
 
-// module required for parsing FormData values
-const expressFormidable = require("express-formidable")
- 
-// setting the middleware
-app.use(expressFormidable({
-    multiples: true
-}))
+// --- Globals ---
+let db
+
+// --- Middleware ---
+app.use(expressFormidable({ multiples: true }))
 app.use("/public", express.static(__dirname + "/public"))
 app.use("/uploads", express.static(__dirname + "/uploads"))
 app.set("view engine", "ejs")
 
-const fs = require("fs")
-const bcryptjs = require("bcryptjs")
-
-// JWT used for authentication
-const jwt = require("jsonwebtoken")
-// secret JWT key
-global.jwtSecret = "jwtSecret1234567890"
-global.mainURL = "http://localhost:3000"
-global.connectionString = "mongodb://localhost:27017"
-
-const auth = require("./modules/auth")
-
-const nodemailer = require("nodemailer")
-global.nodemailerFrom = "support@adnan-tech.com"
-global.transport = nodemailer.createTransport({
-    host: "",
-    port: 465,
-    secure: true,
-    auth: {
-        user: nodemailerFrom,
-        pass: ""
-    }
+// CORS Setup
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*")
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, PATCH, DELETE")
+  res.setHeader("Access-Control-Allow-Headers", "X-Requested-With,Content-Type,Authorization")
+  res.setHeader("Access-Control-Allow-Credentials", true)
+  next()
 })
 
-const port = (process.env.PORT || 3000)
- 
-// start the server at port 3000 (for local) or for hosting server port
-http.listen(port, function () {
-    console.log("Server has been started at: " + port)
- 
-    // connect with database
-    MongoClient.connect(connectionString, function (error, client) {
-        if (error) {
-            console.error(error)
-            return
-        }
- 
-        // database name
-        global.db = client.db("horizon")
-        console.log("Database connected")
-
-        app.post("/change-password", auth, async function (request, result) {
-            const user = request.user
-            const password = request.fields.password
-            const newPassword = request.fields.newPassword
-            const confirmPassword = request.fields.confirmPassword
-
-            if (!password || !newPassword || !confirmPassword) {
-                result.json({
-                    status: "error",
-                    message: "Please fill all fields."
-                })
-
-                return
-            }
-
-            if (newPassword != confirmPassword) {
-                result.json({
-                    status: "error",
-                    message: "Password mis-match."
-                })
-
-                return
-            }
-
-            // check if password is correct
-            const isVerify = await bcryptjs.compareSync(password, user.password)
-
-            if (!isVerify) {
-                result.json({
-                    status: "error",
-                    message: "In-correct password."
-                })
-
-                return
-            }
-
-            const salt = bcryptjs.genSaltSync(10)
-            const hash = await bcryptjs.hashSync(newPassword, salt)
- 
-            await db.collection("users").findOneAndUpdate({
-                _id: user._id
-            }, {
-                $set: {
-                    password: hash
-                }
-            })
-
-            result.json({
-                status: "success",
-                message: "Password has been changed."
-            })
-        })
-
-        app.post("/save-profile", auth, async function (request, result) {
-            const user = request.user
-            const name = request.fields.name || ""
-
-            if (!name) {
-                result.json({
-                    status: "error",
-                    message: "Please fill all fields."
-                })
-
-                return
-            }
-
-            if (Array.isArray(request.files.profileImage)) {
-                result.json({
-                    status: "error",
-                    message: "Only 1 file is allowed."
-                })
-
-                return
-            }
-
-            const profileImage = request.files.profileImage
-            let profileImageObj = user.profileImage || {}
-
-            // const files = []
-            // if (Array.isArray(request.files.profileImage)) {
-            //     for (let a = 0; a < request.files.profileImage.length; a++) {
-            //         if (request.files.profileImage[a].size > 0) {
-            //             files.push(request.files.profileImage[a])
-            //         }
-            //     }
-            // } else if (request.files.profileImage.size > 0) {
-            //     files.push(request.files.profileImage)
-            // }
-
-            if (profileImage?.size > 0) {
-
-                const tempType = profileImage.type.toLowerCase()
-                if (!tempType.includes("jpeg") && !tempType.includes("jpg") && !tempType.includes("png")) {
-                    result.json({
-                        status: "error",
-                        message: "Only JPEG, JPG or PNG is allowed."
-                    })
-                    return
-                }
-
-                if (await fs.existsSync(profileImageObj.path))
-                    await fs.unlinkSync(profileImageObj.path)
-
-                const fileData = await fs.readFileSync(profileImage.path)
-                const fileLocation = "uploads/profiles/" + (new Date().getTime()) + "-" + profileImage.name
-                await fs.writeFileSync(fileLocation, fileData)
-                await fs.unlinkSync(profileImage.path)
-
-                profileImageObj = {
-                    size: profileImage.size,
-                    path: fileLocation,
-                    name: profileImage.name,
-                    type: profileImage.type
-                }
-            }
-
-            await db.collection("users")
-                .findOneAndUpdate({
-                    _id: user._id
-                }, {
-                    $set: {
-                        name: name,
-                        profileImage: profileImageObj
-                    }
-                })
-
-            result.json({
-                status: "success",
-                message: "Profile has been updated.",
-                profileImage: profileImageObj
-            })
-        })
-
-        app.post("/verify-account", async function (request, result) {
-            const email = request.fields.email
-            const code = request.fields.code
-
-            if (!email || !code) {
-                result.json({
-                    status: "error",
-                    message: "Please fill all fields."
-                })
-
-                return
-            }
-         
-            // update JWT of user in database
-            const user = await db.collection("users").findOne({
-                $and: [{
-                    email: email
-                }, {
-                    verificationToken: parseInt(code)
-                }]
-            })
-
-            if (user == null) {
-                result.json({
-                    status: "error",
-                    message: "Invalid email code."
-                })
-
-                return
-            }
-
-            await db.collection("users").findOneAndUpdate({
-                _id: user._id
-            }, {
-                $set: {
-                    isVerified: true
-                },
-
-                // $unset: {
-                //     verificationToken: ""
-                // }
-            })
-
-            result.json({
-                status: "success",
-                message: "Account has been account. Kindly login again."
-            })
-        })
-
-        app.post("/reset-password", async function (request, result) {
-            const email = request.fields.email
-            const code = request.fields.code
-            const password = request.fields.password
-
-            if (!email || !code || !password) {
-                result.json({
-                    status: "error",
-                    message: "Please fill all fields."
-                })
-
-                return
-            }
-         
-            // update JWT of user in database
-            const user = await db.collection("users").findOne({
-                $and: [{
-                    email: email
-                }, {
-                    code: parseInt(code)
-                }]
-            })
-
-            if (user == null) {
-                result.json({
-                    status: "error",
-                    message: "Invalid email code."
-                })
-
-                return
-            }
-
-            const salt = bcryptjs.genSaltSync(10)
-            const hash = await bcryptjs.hashSync(password, salt)
-
-            await db.collection("users").findOneAndUpdate({
-                _id: user._id
-            }, {
-                $set: {
-                    password: hash
-                },
-
-                $unset: {
-                    code: ""
-                }
-            })
-
-            result.json({
-                status: "success",
-                message: "Password has been changed."
-            })
-        })
-
-        app.post("/send-password-recovery-email", async function (request, result) {
-            const email = request.fields.email
-
-            if (!email) {
-                result.json({
-                    status: "error",
-                    message: "Please fill all fields."
-                })
-
-                return
-            }
-         
-            // update JWT of user in database
-            const user = await db.collection("users").findOne({
-                email: email
-            })
-
-            if (user == null) {
-                result.json({
-                    status: "error",
-                    message: "Email does not exists."
-                })
-
-                return
-            }
-
-            const minimum = 0
-            const maximum = 999999
-            const randomNumber = Math.floor(Math.random() * (maximum - minimum + 1)) + minimum
-
-            await db.collection("users").findOneAndUpdate({
-                _id: user._id
-            }, {
-                $set: {
-                    code: randomNumber
-                }
-            })
-
-            const emailHtml = "Your password reset code is: <b style='font-size: 30px;'>" + randomNumber + "</b>."
-            const emailPlain = "Your password reset code is: " + randomNumber + "."
-
-            transport.sendMail({
-                from: nodemailerFrom,
-                to: email,
-                subject: "Password reset code",
-                text: emailPlain,
-                html: emailHtml
-            }, function (error, info) {
-                console.log("Mail sent: ", info)
-            })
-         
-            result.json({
-                status: "success",
-                message: "A verification code has been sent on your email address."
-            })
-        })
-
-        // route for logout request
-        app.post("/logout", async function (request, result) {
-            const accessToken = request.headers.authorization
-
-            if (!accessToken) {
-                result.json({
-                    status: "error",
-                    message: "Access token is required."
-                })
-                return
-            }
-
-            try {
-                // Verify and decode JWT
-                const decoded = jwt.verify(accessToken.replace('Bearer ', ''), jwtSecret)
-
-                // Clear access token from database
-                await db.collection("users").findOneAndUpdate({
-                    _id: new ObjectId(decoded.userId)
-                }, {
-                    $set: {
-                        accessToken: "",
-                        lastLogout: new Date().toUTCString()
-                    }
-                })
-
-                result.json({
-                    status: "success",
-                    message: "Logged out successfully."
-                })
-            } catch (error) {
-                console.error("Logout error:", error)
-                result.json({
-                    status: "error",
-                    message: "Invalid access token."
-                })
-            }
-        })
-
-        app.post("/verify-token", async function (request, result) {
-            const accessToken = request.headers.authorization
-
-            if (!accessToken) {
-                result.json({
-                    status: "error",
-                    message: "Access token is required."
-                })
-                return
-            }
-
-            try {
-                // Verify JWT
-                const decoded = jwt.verify(accessToken.replace('Bearer ', ''), jwtSecret)
-
-                // Get user from database
-                const user = await db.collection("users").findOne({
-                    _id: new ObjectId(decoded.userId),
-                    accessToken: accessToken.replace('Bearer ', '')
-                })
-
-                if (!user) {
-                    result.json({
-                        status: "error",
-                        message: "Invalid or expired token."
-                    })
-                    return
-                }
-
-                result.json({
-                    status: "success",
-                    message: "Token is valid.",
-                    user: {
-                        _id: user._id,
-                        username: user.username,
-                        profileImage: user.profileImage,
-                        createdAt: user.createdAt
-                    }
-                })
-            } catch (error) {
-                console.error("Token verification error:", error)
-                result.json({
-                    status: "error",
-                    message: "Invalid or expired token."
-                })
-            }
-        })
-
-        app.post("/me", auth, async function (request, result) {
-            const user = request.user
-         
-            result.json({
-                status: "success",
-                message: "Data has been fetched.",
-                user: {
-                    _id: user._id,
-                    name: user.name,
-                    email: user.email,
-                    profileImage: user.profileImage
-                }
-            })
-        })
-
-        // route for login requests
-       app.post("/login", async function (request, result) {
-         const username = request.fields.username
-         const password = request.fields.password
-         if (!username || !password) {
-             result.json({
-                 status: "error",
-                 message: "Please fill all fields."
-             })
-             return
-         }
-         try {
-             const user = await db.collection("users").findOne({
-                 username: username
-             })
-             if (user == null) {
-                 result.json({
-                     status: "error",
-                     message: "Username does not exist."
-                 })
-                 return
-             }
-             if (!user.isVerified) {
-                 result.json({
-                     status: "verificationRequired",
-                     message: "Please verify your account first."
-                 })
-                 return
-             }
-             const isVerify = bcryptjs.compareSync(password, user.password)
-             if (isVerify) {
-                 const accessToken = jwt.sign({
-                     userId: user._id.toString(),
-                     username: user.username,
-                     time: new Date().getTime()
-                 }, jwtSecret, {
-                     expiresIn: (60 * 60 * 24 * 30)
-                 })
-                 await db.collection("users").findOneAndUpdate({
-                     username: username
-                 }, {
-                     $set: {
-                         accessToken: accessToken,
-                         lastLogin: new Date().toUTCString()
-                     }
-                 })
-                 result.json({
-                     status: "success",
-                     message: "Login successful.",
-                     accessToken: accessToken,
-                     user: {
-                         _id: user._id,
-                         username: user.username,
-                         profileImage: user.profileImage,
-                         createdAt: user.createdAt
-                     }
-                 })
-                 return
-             }
-             result.json({
-                 status: "error",
-                 message: "Password is not correct."
-             })
-         } catch (error) {
-             console.error("Login error:", error)
-             result.json({
-                 status: "error",
-                 message: "An error occurred during login. Please try again."
-             })
-         }
-     })
-       app.post("/register", async function (request, result) {
-            const username = request.fields.username
-            const password = request.fields.password
-            const confirmPassword = request.fields.confirmPassword
-            const createdAt = new Date().toUTCString()
-
-            // Validate required fields
-            if (!username || !password || !confirmPassword) {
-                result.json({
-                    status: "error",
-                    message: "Please enter all values."
-                })
-                return
-            }
-
-            // Check if passwords match
-            if (password !== confirmPassword) {
-                result.json({
-                    status: "error",
-                    message: "Passwords do not match."
-                })
-                return
-            }
-
-            // Check password strength (optional - add your own requirements)
-            if (password.length < 6) {
-                result.json({
-                    status: "error",
-                    message: "Password must be at least 6 characters long."
-                })
-                return
-            }
-
-            try {
-                // Check if username already exists
-                const existingUser = await db.collection("users").findOne({
-                    username: username
-                })
-
-                if (existingUser != null) {
-                    result.json({
-                        status: "error",
-                        message: "Username already exists."
-                    })
-                    return
-                }
-
-                // Hash the password
-                const salt = bcryptjs.genSaltSync(10)
-                const hash = bcryptjs.hashSync(password, salt)
-
-                // Insert user in database
-                await db.collection("users").insertOne({
-                    username: username,
-                    password: hash,
-                    accessToken: "",
-                    createdAt: createdAt,
-                    profileImage: null,
-                    isVerified: true // Set to false if you want email verification
-                })
-
-                result.json({
-                    status: "success",
-                    message: "Account has been created successfully."
-                })
-            } catch (error) {
-                console.error("Registration error:", error)
-                result.json({
-                    status: "error",
-                    message: "Failed to create account. Please try again."
-                })
-            }
-        })
-        app.get("/change-password", function (request, result) {
-            result.render("change-password", {
-                mainURL: mainURL
-            })
-        })
-
-        app.get("/profile", function (request, result) {
-            result.render("profile", {
-                mainURL: mainURL
-            })
-        })
-
-        app.get("/reset-password/:email", function (request, result) {
-            result.render("reset-password", {
-                mainURL: mainURL,
-                email: request.params.email || ""
-            })
-        })
-
-        app.get("/verify-email/:email", function (request, result) {
-            result.render("verify-email", {
-                mainURL: mainURL,
-                email: request.params.email || ""
-            })
-        })
-
-        app.get("/forgot-password", function (request, result) {
-            result.render("forgot-password", {
-                mainURL: mainURL
-            })
-        })
-
-        app.get("/profile", function (request, result) {
-            result.render("profile", {
-                mainURL: mainURL
-            })
-        })
-
-        app.get("/register", function (request, result) {
-            result.render("register", {
-                mainURL: mainURL
-            })
-        })
-
-        app.get("/login", function (request, result) {
-            result.render("login", {
-                mainURL: mainURL
-            })
-        })
-
-        app.get("/", function (request, result) {
-            result.render("index", {
-                mainURL: mainURL
-            })
-        })
-
-        // app._router.stack.forEach(function(r){
-        //     if (r.route){
-        //         console.log({
-        //             path: r.route.path,
-        //             method: r.route.methods.post ? "POST" : "GET"
-        //         })
-        //     }
-        // })
+// --- Nodemailer ---
+const nodemailerFrom = "support@adnan-tech.com"
+const transport = nodemailer.createTransport({
+  host: "",
+  port: 465,
+  secure: true,
+  auth: { user: nodemailerFrom, pass: "" }
+})
+
+// --- Auth Middleware ---
+const auth = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.replace("Bearer ", "")
+    if (!token) return res.json({ status: "error", message: "Access token is required." })
+
+    const decoded = jwt.verify(token, JWT_SECRET)
+    const user = await db.collection("users").findOne({
+      _id: new ObjectId(decoded.userId),
+      accessToken: token
     })
- 
+
+    if (!user) return res.json({ status: "error", message: "Invalid or expired token." })
+
+    req.user = user
+    next()
+  } catch (error) {
+    console.error("Auth error:", error)
+    res.json({ status: "error", message: "Authentication failed." })
+  }
+}
+
+// --- Routes ---
+
+// Register
+app.post("/register", async (req, res) => {
+  const { username, password, confirmPassword } = req.fields
+  if (!username || !password || !confirmPassword)
+    return res.json({ status: "error", message: "Please enter all values." })
+
+  if (password !== confirmPassword)
+    return res.json({ status: "error", message: "Passwords do not match." })
+
+  if (password.length < 6)
+    return res.json({ status: "error", message: "Password must be at least 6 characters long." })
+
+  const existingUser = await db.collection("users").findOne({ username })
+  if (existingUser) return res.json({ status: "error", message: "Username already exists." })
+
+  const hash = bcryptjs.hashSync(password, bcryptjs.genSaltSync(10))
+
+  await db.collection("users").insertOne({
+    username,
+    password: hash,
+    accessToken: "",
+    createdAt: new Date().toUTCString(),
+    profileImage: null,
+    isVerified: true // change to false if email verification is required
+  })
+
+  res.json({ status: "success", message: "Account created successfully." })
+})
+
+// Login
+app.post("/login", async (req, res) => {
+  const { username, password } = req.fields
+  if (!username || !password) return res.json({ status: "error", message: "Please fill all fields." })
+
+  const user = await db.collection("users").findOne({ username })
+  if (!user) return res.json({ status: "error", message: "Username does not exist." })
+  if (!user.isVerified) return res.json({ status: "verificationRequired", message: "Please verify your account first." })
+
+  if (!bcryptjs.compareSync(password, user.password))
+    return res.json({ status: "error", message: "Password is not correct." })
+
+  const accessToken = jwt.sign(
+    { userId: user._id.toString(), username: user.username },
+    JWT_SECRET,
+    { expiresIn: "30d" }
+  )
+
+  await db.collection("users").updateOne({ _id: user._id }, { $set: { accessToken, lastLogin: new Date().toUTCString() } })
+
+  res.json({
+    status: "success",
+    message: "Login successful.",
+    accessToken,
+    user: { _id: user._id, username: user.username, profileImage: user.profileImage, createdAt: user.createdAt }
+  })
+})
+
+// Logout
+app.post("/logout", async (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer ", "")
+  if (!token) return res.json({ status: "error", message: "Access token is required." })
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET)
+    await db.collection("users").updateOne(
+      { _id: new ObjectId(decoded.userId) },
+      { $set: { accessToken: "", lastLogout: new Date().toUTCString() } }
+    )
+    res.json({ status: "success", message: "Logged out successfully." })
+  } catch (error) {
+    console.error("Logout error:", error)
+    res.json({ status: "error", message: "Invalid access token." })
+  }
+})
+
+// Verify Token
+app.post("/verify-token", async (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer ", "")
+  if (!token) return res.json({ status: "error", message: "Access token is required." })
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET)
+    const user = await db.collection("users").findOne({ _id: new ObjectId(decoded.userId), accessToken: token })
+    if (!user) return res.json({ status: "error", message: "Invalid or expired token." })
+
+    res.json({
+      status: "success",
+      message: "Token is valid.",
+      user: { _id: user._id, username: user.username, profileImage: user.profileImage, createdAt: user.createdAt }
+    })
+  } catch (error) {
+    console.error("Token verification error:", error)
+    res.json({ status: "error", message: "Invalid or expired token." })
+  }
+})
+
+// Get current user
+app.post("/me", auth, async (req, res) => {
+  const user = req.user
+  res.json({
+    status: "success",
+    message: "Data has been fetched.",
+    user: { _id: user._id, name: user.name, email: user.email, profileImage: user.profileImage }
+  })
+})
+
+// Change Password
+app.post("/change-password", auth, async (req, res) => {
+  const user = req.user
+  const { password, newPassword, confirmPassword } = req.fields
+
+  if (!password || !newPassword || !confirmPassword)
+    return res.json({ status: "error", message: "Please fill all fields." })
+
+  if (newPassword !== confirmPassword)
+    return res.json({ status: "error", message: "Password mis-match." })
+
+  if (!bcryptjs.compareSync(password, user.password))
+    return res.json({ status: "error", message: "Incorrect password." })
+
+  const hash = bcryptjs.hashSync(newPassword, bcryptjs.genSaltSync(10))
+  await db.collection("users").updateOne({ _id: user._id }, { $set: { password: hash } })
+
+  res.json({ status: "success", message: "Password has been changed." })
+})
+
+// Save Profile
+app.post("/save-profile", auth, async (req, res) => {
+  const user = req.user
+  const name = req.fields.name || ""
+  if (!name) return res.json({ status: "error", message: "Please fill all fields." })
+
+  let profileImageObj = user.profileImage || {}
+  const profileImage = req.files.profileImage
+
+  if (profileImage?.size > 0) {
+    const ext = profileImage.type.toLowerCase()
+    if (!ext.includes("jpeg") && !ext.includes("jpg") && !ext.includes("png"))
+      return res.json({ status: "error", message: "Only JPEG, JPG or PNG is allowed." })
+
+    if (fs.existsSync(profileImageObj.path)) fs.unlinkSync(profileImageObj.path)
+
+    const fileLocation = `uploads/profiles/${Date.now()}-${profileImage.name}`
+    fs.copyFileSync(profileImage.path, fileLocation)
+    fs.unlinkSync(profileImage.path)
+
+    profileImageObj = { size: profileImage.size, path: fileLocation, name: profileImage.name, type: profileImage.type }
+  }
+
+  await db.collection("users").updateOne(
+    { _id: user._id },
+    { $set: { name, profileImage: profileImageObj } }
+  )
+
+  res.json({ status: "success", message: "Profile updated.", profileImage: profileImageObj })
+})
+
+// Password Recovery - Send Email
+app.post("/send-password-recovery-email", async (req, res) => {
+  const { email } = req.fields
+  if (!email) return res.json({ status: "error", message: "Please fill all fields." })
+
+  const user = await db.collection("users").findOne({ email })
+  if (!user) return res.json({ status: "error", message: "Email does not exist." })
+
+  const code = Math.floor(100000 + Math.random() * 900000)
+  await db.collection("users").updateOne({ _id: user._id }, { $set: { code } })
+
+  const emailHtml = `Your password reset code is: <b style='font-size: 30px;'>${code}</b>`
+  transport.sendMail({ from: nodemailerFrom, to: email, subject: "Password reset code", html: emailHtml })
+
+  res.json({ status: "success", message: "A verification code has been sent to your email." })
+})
+
+// Reset Password
+app.post("/reset-password", async (req, res) => {
+  const { email, code, password } = req.fields
+  if (!email || !code || !password)
+    return res.json({ status: "error", message: "Please fill all fields." })
+
+  const user = await db.collection("users").findOne({ email, code: parseInt(code) })
+  if (!user) return res.json({ status: "error", message: "Invalid email/code." })
+
+  const hash = bcryptjs.hashSync(password, bcryptjs.genSaltSync(10))
+  await db.collection("users").updateOne({ _id: user._id }, { $set: { password: hash }, $unset: { code: "" } })
+
+  res.json({ status: "success", message: "Password has been reset." })
+})
+
+// Verify Account
+app.post("/verify-account", async (req, res) => {
+  const { email, code } = req.fields
+  if (!email || !code) return res.json({ status: "error", message: "Please fill all fields." })
+
+  const user = await db.collection("users").findOne({ email, verificationToken: parseInt(code) })
+  if (!user) return res.json({ status: "error", message: "Invalid email/code." })
+
+  await db.collection("users").updateOne({ _id: user._id }, { $set: { isVerified: true } })
+
+  res.json({ status: "success", message: "Account verified. Please login again." })
+})
+
+// --- View Routes ---
+app.get("/", (req, res) => res.render("index", { mainURL: MAIN_URL }))
+app.get("/register", (req, res) => res.render("register", { mainURL: MAIN_URL }))
+app.get("/login", (req, res) => res.render("login", { mainURL: MAIN_URL }))
+app.get("/profile", (req, res) => res.render("profile", { mainURL: MAIN_URL }))
+app.get("/forgot-password", (req, res) => res.render("forgot-password", { mainURL: MAIN_URL }))
+app.get("/change-password", (req, res) => res.render("change-password", { mainURL: MAIN_URL }))
+app.get("/reset-password/:email", (req, res) => res.render("reset-password", { mainURL: MAIN_URL, email: req.params.email || "" }))
+app.get("/verify-email/:email", (req, res) => res.render("verify-email", { mainURL: MAIN_URL, email: req.params.email || "" }))
+
+// --- Start Server & Connect DB ---
+server.listen(PORT, async () => {
+  try {
+    const client = await MongoClient.connect(DB_URI)
+    db = client.db(DB_NAME)
+    console.log(`✅ Database connected`)
+    console.log(`🚀 Server running at ${MAIN_URL}`)
+  } catch (error) {
+    console.error("DB connection error:", error)
+  }
 })
