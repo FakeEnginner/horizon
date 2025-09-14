@@ -1,7 +1,6 @@
 package com.example.horizon.repository
 
 import android.content.Context
-import android.util.JsonToken
 import android.util.Log
 import com.android.volley.Request
 import com.android.volley.RequestQueue
@@ -16,25 +15,38 @@ import com.google.gson.JsonSyntaxException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
-data class LoginResponse(var message: String, var status: String, var accessToken: String ="")
+// Matches your Node.js server response
+data class UserDetails(
+    var _id: String = "",
+    var username: String = "",
+    var profileImage: String? = null,
+    var createdAt: String? = null
+)
+
+data class LoginResponse(
+    var message: String = "",
+    var status: String = "",
+    var accessToken: String = "",
+    var user: UserDetails? = null
+)
 
 class LoginRepository(private val context: Context) {
+
     private val requestQueue: RequestQueue by lazy {
         Volley.newRequestQueue(context.applicationContext)
     }
+
     private val apiBaseUrl = Utility.apiUrls
+
     suspend fun loginUser(username: String, password: String): LoginResult {
+        if (username.isBlank()) return LoginResult.Error("Username cannot be empty")
+        if (password.isBlank()) return LoginResult.Error("Password cannot be empty")
+
+        val url = "$apiBaseUrl/login"
+
         return try {
-            if (username.isBlank()) {
-                return LoginResult.Error("Username cannot be empty")
-            }
-            if (password.isBlank()) {
-                return LoginResult.Error("Password cannot be empty")
-            }
-
-            val url = "$apiBaseUrl/login"
-
             suspendCancellableCoroutine { continuation ->
+
                 val stringRequest = object : StringRequest(
                     Request.Method.POST,
                     url,
@@ -42,26 +54,32 @@ class LoginRepository(private val context: Context) {
                         Log.i("LoginRepository", "Response: $responseString")
                         try {
                             val gson = Gson()
-                            val generalResponse =
-                                gson.fromJson(responseString, LoginResponse::class.java)
+                            val response = gson.fromJson(responseString, LoginResponse::class.java)
 
-                            if (generalResponse?.status == "success") {
-                                continuation.resume(LoginResult.Success)
-                                val prefrence : MySharedPrefrence = MySharedPrefrence()
-                                prefrence.setAccessToken(context, generalResponse.accessToken)
+                            if (response?.status == "success") {
+                                // Resume coroutine safely
+                                if (continuation.isActive) continuation.resume(LoginResult.Success)
+
+                                // Save access token
+                                val preference = MySharedPrefrence()
+                                preference.setAccessToken(context, response.accessToken)
+
+                                // Save user details as JSON
+                                response.user?.let { user ->
+                                    val userJson = gson.toJson(user)
+                                    preference.setUserDetail(context, userJson)
+                                }
                             } else {
-                                continuation.resume(
-                                    LoginResult.Error(
-                                        generalResponse?.message ?: "API returned an error"
-                                    )
+                                if (continuation.isActive) continuation.resume(
+                                    LoginResult.Error(response?.message ?: "API returned an error")
                                 )
                             }
                         } catch (e: JsonSyntaxException) {
                             Log.e("LoginRepository", "JSON Parsing Error: ${e.message}")
-                            continuation.resume(LoginResult.Error("Failed to parse server response."))
+                            if (continuation.isActive) continuation.resume(LoginResult.Error("Failed to parse server response."))
                         } catch (e: Exception) {
                             Log.e("LoginRepository", "Response Handling Error: ${e.message}")
-                            continuation.resume(LoginResult.Error("Unexpected response error."))
+                            if (continuation.isActive) continuation.resume(LoginResult.Error("Unexpected response error."))
                         }
                     },
                     Response.ErrorListener { error ->
@@ -74,14 +92,14 @@ class LoginRepository(private val context: Context) {
                             error.message != null -> error.message!!
                             else -> "An unknown network error occurred."
                         }
-                        continuation.resume(LoginResult.Error(errorMessage))
+                        if (continuation.isActive) continuation.resume(LoginResult.Error(errorMessage))
                     }
                 ) {
                     override fun getParams(): MutableMap<String, String> {
-                        val params = HashMap<String, String>()
-                        params["username"] = username
-                        params["password"] = password
-                        return params
+                        return hashMapOf(
+                            "username" to username,
+                            "password" to password
+                        )
                     }
                 }
 

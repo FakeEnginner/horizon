@@ -3,7 +3,7 @@ import android.app.AlertDialog
 import android.content.Context
 
 object Utility {
-    val apiUrls: String = "http://172.20.10.8:3000"
+    val apiUrls: String = "http://192.168.1.13:3000"
     fun showAlert(context: Context,
                   title: String="",
                   message: String="",

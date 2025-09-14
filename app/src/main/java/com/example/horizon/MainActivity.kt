@@ -200,4 +200,4 @@ class MainActivity : AppCompatActivity(), FrameLayoutChanger, mainFrameChange {
             }
         }
     }
-}
+  }

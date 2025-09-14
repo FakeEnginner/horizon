@@ -25,4 +25,21 @@
     <color name="snow_white">#F2F0EB</color>
     <color name="active_text_color">#2C3E50</color>
     <color name="inactive_text_color">#BDC3C7</color>
+    <color name="primary_green">#4CAF50</color>
+    <color name="primary_green_dark">#2E7D32</color>
+    <color name="primary_green_light">#66BB6A</color>
+    <color name="background_dark">#1a1a1a</color>
+    <color name="background_medium">#2a2a2a</color>
+    <color name="background_light">#333333</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#999999</color>
+    <color name="text_disabled">#666666</color>
+    <color name="stroke_gray">#555555</color>
+    <color name="error_red">#F44336</color>
+    <color name="warning_orange">#FF9800</color>
+    <color name="online_green">#4CAF50</color>
+    <color name="offline_gray">#757575</color>
+    <color name="busy_red">#F44336</color>
+    <color name="overlay_dark">#80000000</color>
+
 </resources>

@@ -17,4 +17,12 @@ class MySharedPrefrence {
         val sharedPreferences = context.getSharedPreferences(fileName, Context.MODE_PRIVATE)
         sharedPreferences.edit().remove("accessToken").apply()
     }
+    fun setUserDetail(context: Context, userDetail: String) {
+        val sharedPreferences = context.getSharedPreferences(fileName, Context.MODE_PRIVATE)
+        sharedPreferences.edit().putString("userDetail", userDetail).apply()
+    }
+    fun getUserDetail(context: Context): String? {
+        val sharedPreferences = context.getSharedPreferences(fileName, Context.MODE_PRIVATE)
+        return sharedPreferences.getString("userDetail", null)
+    }
 }

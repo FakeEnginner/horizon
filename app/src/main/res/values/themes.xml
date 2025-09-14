@@ -62,4 +62,13 @@
         <item name="postSplashScreenTheme">@style/Base.Theme.Horizon</item>
     </style>
 
+    <style name="VideoCallTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary_green</item>
+        <item name="colorPrimaryDark">@color/primary_green_dark</item>
+        <item name="colorAccent">@color/primary_green_light</item>
+        <item name="android:windowBackground">@color/background_dark</item>
+        <item name="android:statusBarColor">@color/primary_green_dark</item>
+        <item name="android:navigationBarColor">@color/background_dark</item>
+    </style>
+
 </resources>
