@@ -45,7 +45,7 @@
             android:drawableStart="@drawable/user"
             android:paddingStart="16dp"
             android:drawablePadding="16dp"
-            android:hint="@string/username"
+            android:hint="@string/username_only"
             android:textColor="@color/black"
             android:textColorHint="@color/dark_blue"
             android:textSize="18sp"
@@ -111,12 +111,15 @@
         android:gravity="top"
         />
     <RelativeLayout
+        android:id="@+id/createaccount_container"
         android:layout_width="317dp"
         android:layout_height="wrap_content"
         android:layout_marginLeft="10dp"
         android:layout_marginRight="10dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="30dp">
+        android:layout_marginTop="30dp"
+        android:clickable="true"
+        android:focusable="true">
 
         <ImageView
             android:id="@+id/createaccount"

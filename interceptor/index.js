@@ -20,7 +20,27 @@ const ObjectId = mongodb.ObjectId;
 const PORT = process.env.PORT || 3000;
 const DB_URI = "mongodb://localhost:27017";
 const DB_NAME = "horizon";
-const JWT_SECRET = process.env.JWT_SECRET;
+function resolveJwtSecret() {
+  const envSecret = String(process.env.JWT_SECRET || "").trim();
+  if (envSecret.length >= 32) return envSecret;
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Missing/weak JWT_SECRET. Set a strong value (minimum 32 chars).");
+  }
+
+  const devSecretFile = path.join(__dirname, ".jwt-secret");
+  if (fs.existsSync(devSecretFile)) {
+    const fileSecret = fs.readFileSync(devSecretFile, "utf8").trim();
+    if (fileSecret.length >= 32) return fileSecret;
+  }
+
+  const generatedSecret = crypto.randomBytes(48).toString("hex");
+  fs.writeFileSync(devSecretFile, generatedSecret, { encoding: "utf8", mode: 0o600 });
+  console.warn("[auth] JWT_SECRET not found. Generated a local development secret at interceptor/.jwt-secret.");
+  return generatedSecret;
+}
+
+const JWT_SECRET = resolveJwtSecret();
 const MAIN_URL = `http://localhost:${PORT}`;
 const WS_ORIGIN_ALLOWLIST = (process.env.WS_ORIGIN_ALLOWLIST || "").split(",").map(v => v.trim()).filter(Boolean);
 const CORS_ORIGIN_ALLOWLIST = (process.env.CORS_ORIGIN_ALLOWLIST || "").split(",").map(v => v.trim()).filter(Boolean);
@@ -59,10 +79,6 @@ function isRateLimited(key, maxAttempts = 10, windowMs = 10 * 60 * 1000) {
   state.count += 1;
   authAttempts.set(key, state);
   return state.count > maxAttempts;
-}
-
-if (!JWT_SECRET || JWT_SECRET.length < 32) {
-  throw new Error("Missing/weak JWT_SECRET. Set a strong value (minimum 32 chars).");
 }
 
 const profilesUploadDir = path.join(__dirname, "uploads", "profiles");
