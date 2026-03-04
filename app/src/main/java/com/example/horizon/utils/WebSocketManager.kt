@@ -70,7 +70,12 @@ object WebSocketManager {
             .addHeader("Authorization", "Bearer $accessToken")
             .build()
 
-        webSocket = client.newWebSocket(request, object : WebSocketListener() {
+        val requestBuilder = Request.Builder().url(wsUrl)
+        if (!accessToken.isNullOrBlank()) {
+            requestBuilder.addHeader("Authorization", "Bearer $accessToken")
+        }
+
+        webSocket = client.newWebSocket(requestBuilder.build(), object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 Log.d(TAG, "✅ WebSocket connection opened")
                 isConnected = true
