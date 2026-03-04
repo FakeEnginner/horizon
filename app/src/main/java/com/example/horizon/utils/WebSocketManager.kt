@@ -63,6 +63,7 @@ object WebSocketManager {
 
         val wsUrl = buildWebSocketUrl()
         Log.d(TAG, "Connecting to WebSocket as user: $username")
+        Log.d(TAG, "WebSocket endpoint: $wsUrl")
 
         val request = Request.Builder()
             .url(wsUrl)

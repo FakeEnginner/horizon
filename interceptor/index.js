@@ -42,6 +42,12 @@ function normalizeEmail(value = "") {
   return String(value).trim().toLowerCase();
 }
 
+function extractBearerToken(headerValue = "") {
+  const header = String(headerValue || "").trim();
+  if (!header.startsWith("Bearer ")) return "";
+  return header.slice(7).trim();
+}
+
 
 function isRateLimited(key, maxAttempts = 10, windowMs = 10 * 60 * 1000) {
   const now = Date.now();
@@ -112,8 +118,7 @@ const transport = nodemailer.createTransport({
 // ================= Auth Middleware =================
 const auth = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization || "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+    const token = extractBearerToken(req.headers.authorization);
     if (!token) return res.json({ status: "error", message: "Access token is required." });
 
     const decoded = jwt.verify(token, JWT_SECRET);
@@ -209,8 +214,7 @@ app.post("/login", async (req, res) => {
 
 // Logout
 app.post("/logout", async (req, res) => {
-  const authHeader = req.headers.authorization || "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  const token = extractBearerToken(req.headers.authorization);
   if (!token) return res.json({ status: "error", message: "Access token is required." });
 
   try {
@@ -228,8 +232,7 @@ app.post("/logout", async (req, res) => {
 
 // Verify Token
 app.post("/verify-token", async (req, res) => {
-  const authHeader = req.headers.authorization || "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  const token = extractBearerToken(req.headers.authorization);
   if (!token) return res.json({ status: "error", message: "Access token is required." });
 
   try {
@@ -485,8 +488,7 @@ wsServer.on("request", (req) => {
 
   const query = new URL(req.httpRequest.url, MAIN_URL).searchParams;
   const queryToken = query.get("token");
-  const authHeader = req.httpRequest.headers["authorization"] || "";
-  const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  const bearerToken = extractBearerToken(req.httpRequest.headers["authorization"]);
   const token = bearerToken || queryToken;
 
   if (!token) {
