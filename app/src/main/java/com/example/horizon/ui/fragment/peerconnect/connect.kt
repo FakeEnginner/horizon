@@ -155,81 +155,66 @@ class Connect : Fragment() {
 
     // CRITICAL FIX: Added WebSocket connection initialization
     private fun initializeWebSocketConnection() {
-        // Get current username - replace this with your actual user management logic
         val currentUsername = getCurrentUsername()
+        val accessToken = getAccessToken()
 
-        if (currentUsername != null) {
-            Log.d(TAG, "🔌 Connecting WebSocket for user: $currentUsername")
+        if (currentUsername.isNullOrBlank()) {
+            Log.e(TAG, "❌ Cannot connect WebSocket: missing username")
+            Toast.makeText(requireContext(), "Please login again", Toast.LENGTH_LONG).show()
+            return
+        }
 
-            WebSocketManager.connect(
-                username = currentUsername,
-                onConnected = {
-                    Log.d(TAG, "✅ WebSocket connected successfully!")
-                    activity?.runOnUiThread {
-                        updateConnectionStatus()
-                        // Request user list after successful connection
-                        view?.postDelayed({
-                            WebSocketManager.requestOnlineUsers()
-                        }, 500)
-                    }
-                },
-                onError = { error ->
-                    Log.e(TAG, "❌ WebSocket connection failed: $error")
-                    activity?.runOnUiThread {
-                        updateConnectionStatus()
-                        Toast.makeText(requireContext(), "Connection failed: $error", Toast.LENGTH_LONG).show()
+        if (accessToken.isNullOrBlank()) {
+            Log.e(TAG, "❌ Cannot connect WebSocket: missing access token")
+            Toast.makeText(requireContext(), "Session expired. Please login again", Toast.LENGTH_LONG).show()
+            return
+        }
 
-                        // For testing/development - simulate some users
-                        simulateTestUsers()
-                    }
+        Log.d(TAG, "🔌 Connecting WebSocket for user: $currentUsername")
+
+        WebSocketManager.connect(
+            username = currentUsername,
+            accessToken = accessToken,
+            onConnected = {
+                Log.d(TAG, "✅ WebSocket connected successfully")
+                activity?.runOnUiThread {
+                    updateConnectionStatus()
+                    view?.postDelayed({
+                        WebSocketManager.requestOnlineUsers()
+                    }, 400)
                 }
-            )
-        } else {
-            Log.e(TAG, "❌ Cannot connect WebSocket: no username available")
-            // For testing purposes, use a random test username
-            val testUsername = "TestUser_${(Math.random() * 1000).toInt()}"
-            Log.d(TAG, "🧪 Using test username: $testUsername")
-
-            WebSocketManager.connect(
-                username = testUsername,
-                onConnected = {
-                    Log.d(TAG, "✅ WebSocket connected with test user: $testUsername")
-                    activity?.runOnUiThread {
-                        updateConnectionStatus()
-                        view?.postDelayed({
-                            WebSocketManager.requestOnlineUsers()
-                        }, 500)
-                    }
-                },
-                onError = { error ->
-                    Log.e(TAG, "❌ Test connection failed: $error")
-                    simulateTestUsers()
+            },
+            onError = { error ->
+                Log.e(TAG, "❌ WebSocket connection failed: $error")
+                activity?.runOnUiThread {
+                    updateConnectionStatus()
+                    Toast.makeText(requireContext(), "Connection failed: $error", Toast.LENGTH_LONG).show()
                 }
-            )
+            }
+        )
+    }
+
+    private fun getCurrentUsername(): String? {
+        return try {
+            val preference = com.example.horizon.utils.MySharedPrefrence()
+            val userJsonString = preference.getUserDetail(requireContext())
+            if (userJsonString.isNullOrBlank()) return null
+            val user = org.json.JSONObject(userJsonString)
+            user.optString("username", null)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse username from preferences: ${e.message}")
+            null
         }
     }
 
-    // Helper method to get current username - REPLACE WITH YOUR ACTUAL LOGIC
-    private fun getCurrentUsername(): String? {
-        // TODO: Replace this with your actual user management logic
-        // Examples:
-        // return SharedPreferences.getString("username", null)
-        // return UserManager.getCurrentUser()?.username
-        // return viewModel.currentUser.value?.username
-
-        // For now, return a test username - CHANGE THIS!
-        return "User_${(Math.random() * 100).toInt()}"
-    }
-
-    // Test method for development
-    private fun simulateTestUsers() {
-        Log.d(TAG, "🧪 Simulating test users for development")
-        val testUsers = listOf("Alice", "Bob", "Charlie", "Diana", "Eve", "Frank")
-
-        // Simulate receiving online users after a delay
-        view?.postDelayed({
-            WebSocketManager.simulateOnlineUsers(testUsers)
-        }, 1000)
+    private fun getAccessToken(): String? {
+        return try {
+            val preference = com.example.horizon.utils.MySharedPrefrence()
+            preference.getAccessToken(requireContext())
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load access token: ${e.message}")
+            null
+        }
     }
 
     private fun startCall(targetUser: String) {
