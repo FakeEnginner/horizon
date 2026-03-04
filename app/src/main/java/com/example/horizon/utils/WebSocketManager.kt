@@ -24,15 +24,27 @@ object WebSocketManager {
     var onMessageReceived: ((String) -> Unit)? = null
     var onConnectionStateChanged: ((Boolean) -> Unit)? = null
 
+    @Volatile
     private var isConnected = false
     private var lastToken: String? = null
 
+    @Synchronized
     fun connect(
         username: String,
         accessToken: String?,
         onConnected: () -> Unit,
         onError: (String) -> Unit
     ) {
+        if (username.isBlank()) {
+            onError("Invalid username")
+            return
+        }
+
+        if (accessToken.isNullOrBlank()) {
+            onError("Missing access token")
+            return
+        }
+
         if (isConnected && this.username == username) {
             Log.d(TAG, "Already connected as $username")
             onConnected()
@@ -42,13 +54,21 @@ object WebSocketManager {
         if (isConnected && this.username != username) {
             Log.d(TAG, "Connected as different user. Reconnecting.")
             disconnect()
+        } else if (webSocket != null) {
+            disconnect()
         }
 
         this.username = username
         this.lastToken = accessToken
 
         val wsUrl = buildWebSocketUrl()
-        Log.d(TAG, "Connecting to WebSocket as user: $username at $wsUrl")
+        Log.d(TAG, "Connecting to WebSocket as user: $username")
+        Log.d(TAG, "WebSocket endpoint: $wsUrl")
+
+        val request = Request.Builder()
+            .url(wsUrl)
+            .addHeader("Authorization", "Bearer $accessToken")
+            .build()
 
         val requestBuilder = Request.Builder().url(wsUrl)
         if (!accessToken.isNullOrBlank()) {
@@ -67,8 +87,8 @@ object WebSocketManager {
                 }.toString()
 
                 webSocket.send(storeUserMessage)
-                onConnected()
                 requestOnlineUsers()
+                onConnected()
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
@@ -77,17 +97,15 @@ object WebSocketManager {
             }
 
             override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-                Log.d(TAG, "📩 Received bytes: ${bytes.hex()}")
+                Log.d(TAG, "Received binary message of ${bytes.size} bytes")
             }
 
             override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-                Log.d(TAG, "WebSocket closing: $code / $reason")
                 isConnected = false
                 onConnectionStateChanged?.invoke(false)
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                Log.d(TAG, "WebSocket closed: $code / $reason")
                 isConnected = false
                 onConnectionStateChanged?.invoke(false)
             }
@@ -102,6 +120,7 @@ object WebSocketManager {
 
                 Log.e(TAG, "❌ WebSocket failure: $message")
                 isConnected = false
+                this@WebSocketManager.webSocket = null
                 onConnectionStateChanged?.invoke(false)
                 onError(message)
             }
@@ -109,20 +128,12 @@ object WebSocketManager {
     }
 
     private fun buildWebSocketUrl(): String {
-        val base = Utility.apiUrls
-        val wsBase = when {
+        val base = Utility.apiUrls.trim().removeSuffix("/")
+        return when {
             base.startsWith("https://") -> "wss://${base.removePrefix("https://")}"
             base.startsWith("http://") -> "ws://${base.removePrefix("http://")}"
             base.startsWith("wss://") || base.startsWith("ws://") -> base
             else -> "ws://$base"
-        }
-
-        val token = lastToken
-        return if (!token.isNullOrBlank()) {
-            val separator = if (wsBase.contains("?")) "&" else "?"
-            "$wsBase${separator}token=$token"
-        } else {
-            wsBase
         }
     }
 
@@ -134,6 +145,7 @@ object WebSocketManager {
 
         val requestUsersMessage = JSONObject().apply {
             put("type", "request_online_users")
+            put("from", username)
         }.toString()
 
         sendMessage(requestUsersMessage)
@@ -141,9 +153,9 @@ object WebSocketManager {
     }
 
     fun sendMessage(message: String) {
-        if (isConnected && webSocket != null) {
-            webSocket?.send(message)
-            Log.d(TAG, "📤 Sent message: $message")
+        val socket = webSocket
+        if (isConnected && socket != null) {
+            socket.send(message)
         } else {
             Log.w(TAG, "Cannot send message, WebSocket not connected")
         }
@@ -153,11 +165,13 @@ object WebSocketManager {
         if (!isConnected) return
         val pingMessage = JSONObject().apply {
             put("type", "ping")
+            put("from", username)
             put("timestamp", System.currentTimeMillis())
         }.toString()
         sendMessage(pingMessage)
     }
 
+    @Synchronized
     fun disconnect() {
         webSocket?.close(1000, "Client disconnect")
         webSocket = null

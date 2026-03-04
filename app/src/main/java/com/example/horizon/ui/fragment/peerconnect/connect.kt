@@ -826,7 +826,8 @@ class Connect : Fragment() {
             Log.e(TAG, "Error releasing video resources: ${e.message}")
         }
 
-        // Clear WebSocket listeners
+        // Disconnect socket for this screen and clear listeners
+        WebSocketManager.disconnect()
         WebSocketManager.onMessageReceived = null
         WebSocketManager.onConnectionStateChanged = null
 

@@ -31,6 +31,24 @@ let db;
 let users = []; // Online users
 const authAttempts = new Map();
 
+const USERNAME_REGEX = /^[a-zA-Z0-9_\-.]{3,50}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeUsername(value = "") {
+  return String(value).trim();
+}
+
+function normalizeEmail(value = "") {
+  return String(value).trim().toLowerCase();
+}
+
+function extractBearerToken(headerValue = "") {
+  const header = String(headerValue || "").trim();
+  if (!header.startsWith("Bearer ")) return "";
+  return header.slice(7).trim();
+}
+
+
 function isRateLimited(key, maxAttempts = 10, windowMs = 10 * 60 * 1000) {
   const now = Date.now();
   const state = authAttempts.get(key) || { count: 0, windowStart: now };
@@ -55,6 +73,20 @@ app.use(expressFormidable({ multiples: true, maxFileSize: MAX_PROFILE_IMAGE_BYTE
 app.use("/public", express.static(__dirname + "/public"));
 app.use("/uploads", express.static(__dirname + "/uploads"));
 app.set("view engine", "ejs");
+app.set("trust proxy", 1);
+
+app.use((req, res, next) => {
+  if (!db) return res.status(503).json({ status: "error", message: "Service initializing. Please retry." });
+  next();
+});
+
+app.disable("x-powered-by");
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  next();
+});
 
 app.disable("x-powered-by");
 app.use((req, res, next) => {
@@ -94,7 +126,7 @@ const transport = nodemailer.createTransport({
 // ================= Auth Middleware =================
 const auth = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.replace("Bearer ", "");
+    const token = extractBearerToken(req.headers.authorization);
     if (!token) return res.json({ status: "error", message: "Access token is required." });
 
     const decoded = jwt.verify(token, JWT_SECRET);
@@ -120,9 +152,15 @@ app.post("/register", async (req, res) => {
   const clientKey = `register:${req.ip}`;
   if (isRateLimited(clientKey, 20)) return res.status(429).json({ status: "error", message: "Too many attempts. Try later." });
 
-  const { username, password, confirmPassword } = req.fields;
+  const username = normalizeUsername(req.fields.username);
+  const password = String(req.fields.password || "");
+  const confirmPassword = String(req.fields.confirmPassword || "");
+
   if (!username || !password || !confirmPassword)
     return res.json({ status: "error", message: "Please enter all values." });
+
+  if (!USERNAME_REGEX.test(username))
+    return res.json({ status: "error", message: "Username must be 3-50 chars and only letters, numbers, dash, underscore or dot." });
 
   if (password !== confirmPassword)
     return res.json({ status: "error", message: "Passwords do not match." });
@@ -152,7 +190,8 @@ app.post("/login", async (req, res) => {
   const clientKey = `login:${req.ip}`;
   if (isRateLimited(clientKey, 20)) return res.status(429).json({ status: "error", message: "Too many attempts. Try later." });
 
-  const { username, password } = req.fields;
+  const username = normalizeUsername(req.fields.username);
+  const password = String(req.fields.password || "");
   if (!username || !password) return res.json({ status: "error", message: "Please fill all fields." });
 
   const user = await db.collection("users").findOne({ username });
@@ -183,7 +222,7 @@ app.post("/login", async (req, res) => {
 
 // Logout
 app.post("/logout", async (req, res) => {
-  const token = req.headers.authorization?.replace("Bearer ", "");
+  const token = extractBearerToken(req.headers.authorization);
   if (!token) return res.json({ status: "error", message: "Access token is required." });
 
   try {
@@ -201,7 +240,7 @@ app.post("/logout", async (req, res) => {
 
 // Verify Token
 app.post("/verify-token", async (req, res) => {
-  const token = req.headers.authorization?.replace("Bearer ", "");
+  const token = extractBearerToken(req.headers.authorization);
   if (!token) return res.json({ status: "error", message: "Access token is required." });
 
   try {
@@ -243,6 +282,9 @@ app.post("/change-password", auth, async (req, res) => {
 
   if (!bcryptjs.compareSync(password, user.password))
     return res.json({ status: "error", message: "Incorrect password." });
+
+  if (newPassword.length < 8)
+    return res.json({ status: "error", message: "Password must be at least 8 characters long." });
 
   const hash = bcryptjs.hashSync(newPassword, bcryptjs.genSaltSync(10));
   await db.collection("users").updateOne({ _id: user._id }, { $set: { password: hash } });
@@ -297,11 +339,11 @@ app.post("/send-password-recovery-email", async (req, res) => {
   const clientKey = `recovery:${req.ip}`;
   if (isRateLimited(clientKey, 5)) return res.status(429).json({ status: "error", message: "Too many attempts. Try later." });
 
-  const { email } = req.fields;
-  if (!email) return res.json({ status: "error", message: "Please fill all fields." });
+  const email = normalizeEmail(req.fields.email);
+  if (!email || !EMAIL_REGEX.test(email)) return res.json({ status: "error", message: "Please enter a valid email." });
 
   const user = await db.collection("users").findOne({ email });
-  if (!user) return res.json({ status: "error", message: "Email does not exist." });
+  if (!user) return res.json({ status: "success", message: "If the account exists, a verification code has been sent." });
 
   const code = crypto.randomInt(100000, 1000000);
   await db.collection("users").updateOne(
@@ -315,9 +357,15 @@ app.post("/send-password-recovery-email", async (req, res) => {
   );
 
   const emailHtml = `Your password reset code is: <b style='font-size: 30px;'>${code}</b>`;
-  transport.sendMail({ from: nodemailerFrom, to: email, subject: "Password reset code", html: emailHtml });
 
-  res.json({ status: "success", message: "A verification code has been sent to your email." });
+  try {
+    await transport.sendMail({ from: nodemailerFrom, to: email, subject: "Password reset code", html: emailHtml });
+  } catch (error) {
+    console.error("Password recovery email error:", error);
+    return res.status(500).json({ status: "error", message: "Unable to send recovery email at the moment." });
+  }
+
+  res.json({ status: "success", message: "If the account exists, a verification code has been sent." });
 });
 
 // Reset Password
@@ -325,7 +373,9 @@ app.post("/reset-password", async (req, res) => {
   const clientKey = `reset-password:${req.ip}`;
   if (isRateLimited(clientKey, 10)) return res.status(429).json({ status: "error", message: "Too many attempts. Try later." });
 
-  const { email, code, password } = req.fields;
+  const email = normalizeEmail(req.fields.email);
+  const code = req.fields.code;
+  const password = String(req.fields.password || "");
   if (!email || !code || !password)
     return res.json({ status: "error", message: "Please fill all fields." });
 
@@ -360,6 +410,9 @@ app.post("/verify-account", async (req, res) => {
 
   res.json({ status: "success", message: "Account verified. Please login again." });
 });
+
+// Health Check
+app.get("/healthz", (req, res) => res.json({ status: "ok" }));
 
 // ================= View Routes =================
 app.get("/", (req, res) => res.render("index", { mainURL: MAIN_URL }));
@@ -429,6 +482,12 @@ function broadcastOnlineUsers() {
   });
 }
 
+function isAuthorizedSignalSender(connection, payload) {
+  const from = String(payload?.from || "").trim();
+  if (!from) return false;
+  return connection?.auth?.username === from;
+}
+
 wsServer.on("request", (req) => {
   if (WS_ORIGIN_ALLOWLIST.length > 0 && req.origin && !WS_ORIGIN_ALLOWLIST.includes(req.origin)) {
     req.reject(403, "Forbidden origin");
@@ -437,8 +496,7 @@ wsServer.on("request", (req) => {
 
   const query = new URL(req.httpRequest.url, MAIN_URL).searchParams;
   const queryToken = query.get("token");
-  const authHeader = req.httpRequest.headers["authorization"] || "";
-  const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  const bearerToken = extractBearerToken(req.httpRequest.headers["authorization"]);
   const token = bearerToken || queryToken;
 
   if (!token) {
@@ -498,6 +556,14 @@ wsServer.on("request", (req) => {
 
           // ================= WebRTC Signaling Messages =================
           case "call_request": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const { from, to } = data;
             console.log(`📞 Call request from ${from} to ${to}`);
             
@@ -522,6 +588,14 @@ wsServer.on("request", (req) => {
           }
 
           case "call_accepted": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const { from, to } = data;
             console.log(`✅ Call accepted by ${from} to ${to}`);
             
@@ -534,6 +608,14 @@ wsServer.on("request", (req) => {
           }
 
           case "call_rejected": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const { from, to } = data;
             console.log(`❌ Call rejected by ${from} to ${to}`);
             
@@ -546,6 +628,14 @@ wsServer.on("request", (req) => {
           }
 
           case "sdp_offer": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const { from, to, sdp } = data;
             console.log(`📋 SDP Offer from ${from} to ${to}`);
             
@@ -563,6 +653,14 @@ wsServer.on("request", (req) => {
           }
 
           case "sdp_answer": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const { from, to, sdp } = data;
             console.log(`📋 SDP Answer from ${from} to ${to}`);
             
@@ -580,6 +678,14 @@ wsServer.on("request", (req) => {
           }
 
           case "ice_candidate": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const { from, to, candidate, sdpMid, sdpMLineIndex } = data;
             console.log(`🧊 ICE Candidate from ${from} to ${to}`);
             
@@ -599,6 +705,14 @@ wsServer.on("request", (req) => {
           }
 
           case "call_end": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const { from, to } = data;
             console.log(`📴 Call ended by ${from} to ${to}`);
             
@@ -612,6 +726,14 @@ wsServer.on("request", (req) => {
 
           // ================= Legacy Message Types =================
           case "send_to_user": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const targetUser = findUser(data.to);
             if (targetUser) {
               sendToUser(data.to, {
@@ -641,6 +763,14 @@ wsServer.on("request", (req) => {
           }
 
           case "broadcast": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const broadcastMessage = {
               type: "broadcast",
               message: data.message,
@@ -695,5 +825,21 @@ setInterval(() => {
     broadcastOnlineUsers();
   }
 }, 30000);
+
+
+
+app.use((err, req, res, next) => {
+  console.error("Unhandled API error:", err);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ status: "error", message: "Internal server error." });
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught exception:", error);
+});
 
 console.log("🎯 WebRTC Signaling Server ready for connections");
