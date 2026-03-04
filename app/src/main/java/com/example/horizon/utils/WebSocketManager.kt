@@ -1,15 +1,17 @@
 package com.example.horizon.utils
 
 import android.util.Log
-import okhttp3.*
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.WebSocket
+import okhttp3.WebSocketListener
 import okio.ByteString
-import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 object WebSocketManager {
     private const val TAG = "WebSocketManager"
-    private const val SERVER_URL = "ws://192.168.1.13:3000"
 
     private var webSocket: WebSocket? = null
     private val client = OkHttpClient.Builder()
@@ -21,61 +23,57 @@ object WebSocketManager {
     var username: String? = null
     var onMessageReceived: ((String) -> Unit)? = null
     var onConnectionStateChanged: ((Boolean) -> Unit)? = null
-    private var isConnected = false
 
-    fun connect(username: String, onConnected: () -> Unit, onError: (String) -> Unit) {
-        if (isConnected) {
-            Log.w(TAG, "Already connected")
+    private var isConnected = false
+    private var lastToken: String? = null
+
+    fun connect(
+        username: String,
+        accessToken: String?,
+        onConnected: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        if (isConnected && this.username == username) {
+            Log.d(TAG, "Already connected as $username")
             onConnected()
             return
         }
 
+        if (isConnected && this.username != username) {
+            Log.d(TAG, "Connected as different user. Reconnecting.")
+            disconnect()
+        }
+
         this.username = username
-        Log.d(TAG, "Connecting to WebSocket as user: $username")
+        this.lastToken = accessToken
 
-        val request = Request.Builder()
-            .url(SERVER_URL)
-            .build()
+        val wsUrl = buildWebSocketUrl()
+        Log.d(TAG, "Connecting to WebSocket as user: $username at $wsUrl")
 
-        webSocket = client.newWebSocket(request, object : WebSocketListener() {
+        val requestBuilder = Request.Builder().url(wsUrl)
+        if (!accessToken.isNullOrBlank()) {
+            requestBuilder.addHeader("Authorization", "Bearer $accessToken")
+        }
+
+        webSocket = client.newWebSocket(requestBuilder.build(), object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 Log.d(TAG, "✅ WebSocket connection opened")
                 isConnected = true
                 onConnectionStateChanged?.invoke(true)
-
-                // Send registration message - using both formats for compatibility
-                val registerMessage = JSONObject().apply {
-                    put("type", "register")
-                    put("username", username)
-                }.toString()
 
                 val storeUserMessage = JSONObject().apply {
                     put("type", "store_user")
                     put("username", username)
                 }.toString()
 
-                // Send both messages to ensure compatibility
-                webSocket.send(registerMessage)
                 webSocket.send(storeUserMessage)
-
-                Log.d(TAG, "Sent registration messages for user: $username")
                 onConnected()
-
-                // Request online users list
                 requestOnlineUsers()
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
                 Log.d(TAG, "📩 Received message: $text")
-                try {
-                    // Parse and potentially transform the message
-                    val transformedMessage = transformMessage(text)
-                    onMessageReceived?.invoke(transformedMessage)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error processing message: ${e.message}")
-                    // Still forward the original message
-                    onMessageReceived?.invoke(text)
-                }
+                onMessageReceived?.invoke(text)
             }
 
             override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
@@ -95,41 +93,36 @@ object WebSocketManager {
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                Log.e(TAG, "❌ WebSocket failure: ${t.message}")
+                val serverCode = response?.code
+                val message = if (serverCode != null) {
+                    "${t.message ?: "WebSocket failure"} (HTTP $serverCode)"
+                } else {
+                    t.message ?: "Unknown error"
+                }
+
+                Log.e(TAG, "❌ WebSocket failure: $message")
                 isConnected = false
                 onConnectionStateChanged?.invoke(false)
-                onError(t.message ?: "Unknown error")
+                onError(message)
             }
         })
     }
 
-    private fun transformMessage(originalMessage: String): String {
-        return try {
-            val json = JSONObject(originalMessage)
+    private fun buildWebSocketUrl(): String {
+        val base = Utility.apiUrls
+        val wsBase = when {
+            base.startsWith("https://") -> "wss://${base.removePrefix("https://")}"
+            base.startsWith("http://") -> "ws://${base.removePrefix("http://")}"
+            base.startsWith("wss://") || base.startsWith("ws://") -> base
+            else -> "ws://$base"
+        }
 
-            // Handle different message types and transform if needed
-            when {
-                // If server sends user list in a different format, transform it
-                json.has("users") || json.has("online_users") -> {
-                    val users = when {
-                        json.has("users") -> json.get("users")
-                        json.has("online_users") -> json.get("online_users")
-                        else -> JSONArray()
-                    }
-
-                    // Ensure consistent format
-                    JSONObject().apply {
-                        put("type", "online_users")
-                        put("users", users)
-                    }.toString()
-                }
-
-                // Pass through other message types as-is
-                else -> originalMessage
-            }
-        } catch (e: Exception) {
-            // If parsing fails, return original message
-            originalMessage
+        val token = lastToken
+        return if (!token.isNullOrBlank()) {
+            val separator = if (wsBase.contains("?")) "&" else "?"
+            "$wsBase${separator}token=$token"
+        } else {
+            wsBase
         }
     }
 
@@ -139,18 +132,11 @@ object WebSocketManager {
             return
         }
 
-        // Try multiple request formats to ensure compatibility
-        val getUsersMessage = JSONObject().apply {
-            put("type", "get_users")
-        }.toString()
-
         val requestUsersMessage = JSONObject().apply {
             put("type", "request_online_users")
         }.toString()
 
-        sendMessage(getUsersMessage)
         sendMessage(requestUsersMessage)
-
         Log.d(TAG, "Requested online users list")
     }
 
@@ -163,52 +149,22 @@ object WebSocketManager {
         }
     }
 
-    fun sendMessageToUser(to: String, message: String) {
-        val msg = JSONObject().apply {
-            put("type", "send_to_user")
-            put("to", to)
-            put("message", message)
-            put("from", username)
+    fun testConnection() {
+        if (!isConnected) return
+        val pingMessage = JSONObject().apply {
+            put("type", "ping")
+            put("timestamp", System.currentTimeMillis())
         }.toString()
-        sendMessage(msg)
-    }
-
-    fun broadcast(message: String) {
-        val msg = JSONObject().apply {
-            put("type", "broadcast")
-            put("message", message)
-            put("from", username)
-        }.toString()
-        sendMessage(msg)
+        sendMessage(pingMessage)
     }
 
     fun disconnect() {
         webSocket?.close(1000, "Client disconnect")
+        webSocket = null
         isConnected = false
         onConnectionStateChanged?.invoke(false)
         Log.d(TAG, "WebSocket disconnected")
     }
 
     fun isConnected(): Boolean = isConnected
-
-    // Test methods
-    fun simulateOnlineUsers(users: List<String>) {
-        val message = JSONObject().apply {
-            put("type", "online_users")
-            put("users", JSONArray(users))
-        }.toString()
-
-        Log.d(TAG, "🧪 Simulating online users: $message")
-        onMessageReceived?.invoke(message)
-    }
-
-    fun testConnection() {
-        if (isConnected) {
-            val testMessage = JSONObject().apply {
-                put("type", "ping")
-                put("timestamp", System.currentTimeMillis())
-            }.toString()
-            sendMessage(testMessage)
-        }
-    }
 }

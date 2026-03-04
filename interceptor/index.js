@@ -430,26 +430,35 @@ function broadcastOnlineUsers() {
 }
 
 wsServer.on("request", (req) => {
-  if (WS_ORIGIN_ALLOWLIST.length > 0 && !WS_ORIGIN_ALLOWLIST.includes(req.origin)) {
+  if (WS_ORIGIN_ALLOWLIST.length > 0 && req.origin && !WS_ORIGIN_ALLOWLIST.includes(req.origin)) {
     req.reject(403, "Forbidden origin");
     return;
   }
 
   const query = new URL(req.httpRequest.url, MAIN_URL).searchParams;
-  const token = query.get("token");
+  const queryToken = query.get("token");
+  const authHeader = req.httpRequest.headers["authorization"] || "";
+  const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  const token = bearerToken || queryToken;
+
   if (!token) {
     req.reject(401, "WebSocket auth token required");
     return;
   }
 
+  let tokenPayload;
   try {
-    jwt.verify(token, JWT_SECRET);
+    tokenPayload = jwt.verify(token, JWT_SECRET);
   } catch (err) {
     req.reject(401, "Invalid WebSocket auth token");
     return;
   }
 
   const connection = req.accept();
+  connection.auth = {
+    username: tokenPayload.username || "",
+    userId: tokenPayload.userId || ""
+  };
   console.log("✅ New WebSocket connection");
 
   connection.on("message", (message) => {
@@ -462,6 +471,14 @@ wsServer.on("request", (req) => {
           case "store_user": {
             const username = data.username;
             if (!username) return;
+            if (!connection.auth?.username || username !== connection.auth.username) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized user mapping",
+                errorCode: "UNAUTHORIZED_USERNAME"
+              }));
+              return;
+            }
             
             // Check if user already exists
             const existingUser = findUser(username);
@@ -604,6 +621,22 @@ wsServer.on("request", (req) => {
                 timestamp: Date.now()
               });
             }
+            break;
+          }
+
+          case "request_online_users": {
+            connection.send(JSON.stringify({
+              type: "online_users",
+              users: users.map(u => u.name)
+            }));
+            break;
+          }
+
+          case "ping": {
+            connection.send(JSON.stringify({
+              type: "pong",
+              timestamp: Date.now()
+            }));
             break;
           }
 

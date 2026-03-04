@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,7 +21,6 @@ import com.example.horizon.model.bannerModel
 import com.example.horizon.model.blogModel
 import com.example.horizon.model.entities.diary
 import com.example.horizon.model.trendeningModel
-import com.example.horizon.repository.UserDetails
 import com.example.horizon.ui.activity.HybridVideoPlayer
 import com.example.horizon.ui.fragment.dashboard.adapter.bannerAdapter
 import com.example.horizon.ui.fragment.dashboard.adapter.blogAdapter
@@ -32,11 +30,7 @@ import com.example.horizon.ui.fragment.diary.diaryHandler
 import com.example.horizon.ui.fragment.login.login
 import com.example.horizon.ui.fragment.peerconnect.Connect
 import com.example.horizon.utils.Helper
-import com.example.horizon.utils.MySharedPrefrence
-import com.example.horizon.utils.WebSocketManager
 import com.example.horizon.viewmodel.DiaryViewModel
-import com.google.gson.Gson
-import org.json.JSONObject
 
 class Dashboard: Fragment() ,diaryAdapter.OnItemClickListener{
     private var mainFrameChange: mainFrameChange? = null
@@ -48,7 +42,6 @@ class Dashboard: Fragment() ,diaryAdapter.OnItemClickListener{
     private lateinit var diaryViewModel: DiaryViewModel
 
     val helper = Helper()
-    val gson = Gson()
     private val handler = Handler(Looper.getMainLooper())
     private val scrollRunnable = object : Runnable {
         override fun run() {
@@ -81,35 +74,6 @@ class Dashboard: Fragment() ,diaryAdapter.OnItemClickListener{
         }
         binding.peerMeetingrcy.videobtn.setOnClickListener {
             helper.replacetoDashboardFragment(Connect(),requireFragmentManager())
-            val preference = MySharedPrefrence()
-
-            val userJsonString = preference.getUserDetail(requireContext())
-
-            val user: UserDetails? = try {
-                if (!userJsonString.isNullOrEmpty()) {
-                    gson.fromJson(userJsonString, UserDetails::class.java)
-                } else null
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
-            }
-
-            if (user != null) {
-                println("User name: ${user.username}")
-            } else {
-                println("No user data found")
-            }
-
-            Log.e("user", user.toString())
-            WebSocketManager.connect(
-                username = user?.username ?: "unknown",
-                onConnected = {
-                    Log.d("MainActivity", "WebSocket connected successfully")
-                },
-                onError = { errorMessage ->
-                    Log.e("MainActivity", "WebSocket connection failed: $errorMessage")
-                }
-            )
         }
         return binding.root
     }
