@@ -4,6 +4,8 @@ const http = require("http");
 const mongodb = require("mongodb");
 const expressFormidable = require("express-formidable");
 const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
@@ -18,25 +20,65 @@ const ObjectId = mongodb.ObjectId;
 const PORT = process.env.PORT || 3000;
 const DB_URI = "mongodb://localhost:27017";
 const DB_NAME = "horizon";
-const JWT_SECRET = "jwtSecret1234567890";
+const JWT_SECRET = process.env.JWT_SECRET;
 const MAIN_URL = `http://localhost:${PORT}`;
+const WS_ORIGIN_ALLOWLIST = (process.env.WS_ORIGIN_ALLOWLIST || "").split(",").map(v => v.trim()).filter(Boolean);
+const CORS_ORIGIN_ALLOWLIST = (process.env.CORS_ORIGIN_ALLOWLIST || "").split(",").map(v => v.trim()).filter(Boolean);
+const MAX_PROFILE_IMAGE_BYTES = 5 * 1024 * 1024;
 
 // ================= Globals =================
 let db;
 let users = []; // Online users
+const authAttempts = new Map();
+
+function isRateLimited(key, maxAttempts = 10, windowMs = 10 * 60 * 1000) {
+  const now = Date.now();
+  const state = authAttempts.get(key) || { count: 0, windowStart: now };
+  if (now - state.windowStart > windowMs) {
+    state.count = 0;
+    state.windowStart = now;
+  }
+  state.count += 1;
+  authAttempts.set(key, state);
+  return state.count > maxAttempts;
+}
+
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  throw new Error("Missing/weak JWT_SECRET. Set a strong value (minimum 32 chars).");
+}
+
+const profilesUploadDir = path.join(__dirname, "uploads", "profiles");
+fs.mkdirSync(profilesUploadDir, { recursive: true });
 
 // ================= Middleware =================
-app.use(expressFormidable({ multiples: true }));
+app.use(expressFormidable({ multiples: true, maxFileSize: MAX_PROFILE_IMAGE_BYTES }));
 app.use("/public", express.static(__dirname + "/public"));
 app.use("/uploads", express.static(__dirname + "/uploads"));
 app.set("view engine", "ejs");
 
+app.disable("x-powered-by");
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  next();
+});
+
 // CORS Setup
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const origin = req.headers.origin;
+  if (origin && CORS_ORIGIN_ALLOWLIST.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, PATCH, DELETE");
   res.setHeader("Access-Control-Allow-Headers", "X-Requested-With,Content-Type,Authorization");
-  res.setHeader("Access-Control-Allow-Credentials", true);
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
   next();
 });
 
@@ -75,6 +117,9 @@ const auth = async (req, res, next) => {
 
 // Register
 app.post("/register", async (req, res) => {
+  const clientKey = `register:${req.ip}`;
+  if (isRateLimited(clientKey, 20)) return res.status(429).json({ status: "error", message: "Too many attempts. Try later." });
+
   const { username, password, confirmPassword } = req.fields;
   if (!username || !password || !confirmPassword)
     return res.json({ status: "error", message: "Please enter all values." });
@@ -104,15 +149,18 @@ app.post("/register", async (req, res) => {
 
 // Login
 app.post("/login", async (req, res) => {
+  const clientKey = `login:${req.ip}`;
+  if (isRateLimited(clientKey, 20)) return res.status(429).json({ status: "error", message: "Too many attempts. Try later." });
+
   const { username, password } = req.fields;
   if (!username || !password) return res.json({ status: "error", message: "Please fill all fields." });
 
   const user = await db.collection("users").findOne({ username });
-  if (!user) return res.json({ status: "error", message: "Username does not exist." });
+  if (!user) return res.json({ status: "error", message: "Invalid username or password." });
   if (!user.isVerified) return res.json({ status: "verificationRequired", message: "Please verify your account first." });
 
   if (!bcryptjs.compareSync(password, user.password))
-    return res.json({ status: "error", message: "Password is not correct." });
+    return res.json({ status: "error", message: "Invalid username or password." });
 
   const accessToken = jwt.sign(
     { userId: user._id.toString(), username: user.username },
@@ -212,17 +260,28 @@ app.post("/save-profile", auth, async (req, res) => {
   const profileImage = req.files.profileImage;
 
   if (profileImage?.size > 0) {
+    if (profileImage.size > MAX_PROFILE_IMAGE_BYTES) {
+      return res.json({ status: "error", message: "Profile image is too large." });
+    }
+
     const ext = profileImage.type.toLowerCase();
     if (!ext.includes("jpeg") && !ext.includes("jpg") && !ext.includes("png"))
       return res.json({ status: "error", message: "Only JPEG, JPG or PNG is allowed." });
 
-    if (fs.existsSync(profileImageObj.path)) fs.unlinkSync(profileImageObj.path);
+    if (profileImageObj.path && fs.existsSync(profileImageObj.path)) fs.unlinkSync(profileImageObj.path);
 
-    const fileLocation = `uploads/profiles/${Date.now()}-${profileImage.name}`;
+    const safeName = path.basename(profileImage.name).replace(/[^a-zA-Z0-9._-]/g, "_");
+    const generatedName = `${Date.now()}-${crypto.randomBytes(8).toString("hex")}-${safeName}`;
+    const fileLocation = path.join(profilesUploadDir, generatedName);
     fs.copyFileSync(profileImage.path, fileLocation);
     fs.unlinkSync(profileImage.path);
 
-    profileImageObj = { size: profileImage.size, path: fileLocation, name: profileImage.name, type: profileImage.type };
+    profileImageObj = {
+      size: profileImage.size,
+      path: `uploads/profiles/${generatedName}`,
+      name: safeName,
+      type: profileImage.type
+    };
   }
 
   await db.collection("users").updateOne(
@@ -235,14 +294,25 @@ app.post("/save-profile", auth, async (req, res) => {
 
 // Password Recovery - Send Email
 app.post("/send-password-recovery-email", async (req, res) => {
+  const clientKey = `recovery:${req.ip}`;
+  if (isRateLimited(clientKey, 5)) return res.status(429).json({ status: "error", message: "Too many attempts. Try later." });
+
   const { email } = req.fields;
   if (!email) return res.json({ status: "error", message: "Please fill all fields." });
 
   const user = await db.collection("users").findOne({ email });
   if (!user) return res.json({ status: "error", message: "Email does not exist." });
 
-  const code = Math.floor(100000 + Math.random() * 900000);
-  await db.collection("users").updateOne({ _id: user._id }, { $set: { code } });
+  const code = crypto.randomInt(100000, 1000000);
+  await db.collection("users").updateOne(
+    { _id: user._id },
+    {
+      $set: {
+        code,
+        codeExpiresAt: new Date(Date.now() + 15 * 60 * 1000)
+      }
+    }
+  );
 
   const emailHtml = `Your password reset code is: <b style='font-size: 30px;'>${code}</b>`;
   transport.sendMail({ from: nodemailerFrom, to: email, subject: "Password reset code", html: emailHtml });
@@ -252,17 +322,27 @@ app.post("/send-password-recovery-email", async (req, res) => {
 
 // Reset Password
 app.post("/reset-password", async (req, res) => {
+  const clientKey = `reset-password:${req.ip}`;
+  if (isRateLimited(clientKey, 10)) return res.status(429).json({ status: "error", message: "Too many attempts. Try later." });
+
   const { email, code, password } = req.fields;
   if (!email || !code || !password)
     return res.json({ status: "error", message: "Please fill all fields." });
 
-  const user = await db.collection("users").findOne({ email, code: parseInt(code) });
+  if (password.length < 8)
+    return res.json({ status: "error", message: "Password must be at least 8 characters long." });
+
+  const user = await db.collection("users").findOne({
+    email,
+    code: parseInt(code),
+    codeExpiresAt: { $gt: new Date() }
+  });
   if (!user) return res.json({ status: "error", message: "Invalid email/code." });
 
   const hash = bcryptjs.hashSync(password, bcryptjs.genSaltSync(10));
   await db.collection("users").updateOne(
     { _id: user._id },
-    { $set: { password: hash }, $unset: { code: "" } }
+    { $set: { password: hash }, $unset: { code: "", codeExpiresAt: "" } }
   );
 
   res.json({ status: "success", message: "Password has been reset." });
@@ -350,6 +430,25 @@ function broadcastOnlineUsers() {
 }
 
 wsServer.on("request", (req) => {
+  if (WS_ORIGIN_ALLOWLIST.length > 0 && !WS_ORIGIN_ALLOWLIST.includes(req.origin)) {
+    req.reject(403, "Forbidden origin");
+    return;
+  }
+
+  const query = new URL(req.httpRequest.url, MAIN_URL).searchParams;
+  const token = query.get("token");
+  if (!token) {
+    req.reject(401, "WebSocket auth token required");
+    return;
+  }
+
+  try {
+    jwt.verify(token, JWT_SECRET);
+  } catch (err) {
+    req.reject(401, "Invalid WebSocket auth token");
+    return;
+  }
+
   const connection = req.accept();
   console.log("✅ New WebSocket connection");
 
