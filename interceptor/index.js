@@ -4,6 +4,8 @@ const http = require("http");
 const mongodb = require("mongodb");
 const expressFormidable = require("express-formidable");
 const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
@@ -18,25 +20,83 @@ const ObjectId = mongodb.ObjectId;
 const PORT = process.env.PORT || 3000;
 const DB_URI = "mongodb://localhost:27017";
 const DB_NAME = "horizon";
-const JWT_SECRET = "jwtSecret1234567890";
+const JWT_SECRET = process.env.JWT_SECRET;
 const MAIN_URL = `http://localhost:${PORT}`;
+const WS_ORIGIN_ALLOWLIST = (process.env.WS_ORIGIN_ALLOWLIST || "").split(",").map(v => v.trim()).filter(Boolean);
+const CORS_ORIGIN_ALLOWLIST = (process.env.CORS_ORIGIN_ALLOWLIST || "").split(",").map(v => v.trim()).filter(Boolean);
+const MAX_PROFILE_IMAGE_BYTES = 5 * 1024 * 1024;
 
 // ================= Globals =================
 let db;
 let users = []; // Online users
+const authAttempts = new Map();
+
+const USERNAME_REGEX = /^[a-zA-Z0-9_\-.]{3,50}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeUsername(value = "") {
+  return String(value).trim();
+}
+
+function normalizeEmail(value = "") {
+  return String(value).trim().toLowerCase();
+}
+
+
+function isRateLimited(key, maxAttempts = 10, windowMs = 10 * 60 * 1000) {
+  const now = Date.now();
+  const state = authAttempts.get(key) || { count: 0, windowStart: now };
+  if (now - state.windowStart > windowMs) {
+    state.count = 0;
+    state.windowStart = now;
+  }
+  state.count += 1;
+  authAttempts.set(key, state);
+  return state.count > maxAttempts;
+}
+
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  throw new Error("Missing/weak JWT_SECRET. Set a strong value (minimum 32 chars).");
+}
+
+const profilesUploadDir = path.join(__dirname, "uploads", "profiles");
+fs.mkdirSync(profilesUploadDir, { recursive: true });
 
 // ================= Middleware =================
-app.use(expressFormidable({ multiples: true }));
+app.use(expressFormidable({ multiples: true, maxFileSize: MAX_PROFILE_IMAGE_BYTES }));
 app.use("/public", express.static(__dirname + "/public"));
 app.use("/uploads", express.static(__dirname + "/uploads"));
 app.set("view engine", "ejs");
+app.set("trust proxy", 1);
+
+app.use((req, res, next) => {
+  if (!db) return res.status(503).json({ status: "error", message: "Service initializing. Please retry." });
+  next();
+});
+
+app.disable("x-powered-by");
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  next();
+});
 
 // CORS Setup
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const origin = req.headers.origin;
+  if (origin && CORS_ORIGIN_ALLOWLIST.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, PATCH, DELETE");
   res.setHeader("Access-Control-Allow-Headers", "X-Requested-With,Content-Type,Authorization");
-  res.setHeader("Access-Control-Allow-Credentials", true);
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
   next();
 });
 
@@ -52,7 +112,8 @@ const transport = nodemailer.createTransport({
 // ================= Auth Middleware =================
 const auth = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.replace("Bearer ", "");
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
     if (!token) return res.json({ status: "error", message: "Access token is required." });
 
     const decoded = jwt.verify(token, JWT_SECRET);
@@ -75,9 +136,18 @@ const auth = async (req, res, next) => {
 
 // Register
 app.post("/register", async (req, res) => {
-  const { username, password, confirmPassword } = req.fields;
+  const clientKey = `register:${req.ip}`;
+  if (isRateLimited(clientKey, 20)) return res.status(429).json({ status: "error", message: "Too many attempts. Try later." });
+
+  const username = normalizeUsername(req.fields.username);
+  const password = String(req.fields.password || "");
+  const confirmPassword = String(req.fields.confirmPassword || "");
+
   if (!username || !password || !confirmPassword)
     return res.json({ status: "error", message: "Please enter all values." });
+
+  if (!USERNAME_REGEX.test(username))
+    return res.json({ status: "error", message: "Username must be 3-50 chars and only letters, numbers, dash, underscore or dot." });
 
   if (password !== confirmPassword)
     return res.json({ status: "error", message: "Passwords do not match." });
@@ -104,15 +174,19 @@ app.post("/register", async (req, res) => {
 
 // Login
 app.post("/login", async (req, res) => {
-  const { username, password } = req.fields;
+  const clientKey = `login:${req.ip}`;
+  if (isRateLimited(clientKey, 20)) return res.status(429).json({ status: "error", message: "Too many attempts. Try later." });
+
+  const username = normalizeUsername(req.fields.username);
+  const password = String(req.fields.password || "");
   if (!username || !password) return res.json({ status: "error", message: "Please fill all fields." });
 
   const user = await db.collection("users").findOne({ username });
-  if (!user) return res.json({ status: "error", message: "Username does not exist." });
+  if (!user) return res.json({ status: "error", message: "Invalid username or password." });
   if (!user.isVerified) return res.json({ status: "verificationRequired", message: "Please verify your account first." });
 
   if (!bcryptjs.compareSync(password, user.password))
-    return res.json({ status: "error", message: "Password is not correct." });
+    return res.json({ status: "error", message: "Invalid username or password." });
 
   const accessToken = jwt.sign(
     { userId: user._id.toString(), username: user.username },
@@ -135,7 +209,8 @@ app.post("/login", async (req, res) => {
 
 // Logout
 app.post("/logout", async (req, res) => {
-  const token = req.headers.authorization?.replace("Bearer ", "");
+  const authHeader = req.headers.authorization || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
   if (!token) return res.json({ status: "error", message: "Access token is required." });
 
   try {
@@ -153,7 +228,8 @@ app.post("/logout", async (req, res) => {
 
 // Verify Token
 app.post("/verify-token", async (req, res) => {
-  const token = req.headers.authorization?.replace("Bearer ", "");
+  const authHeader = req.headers.authorization || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
   if (!token) return res.json({ status: "error", message: "Access token is required." });
 
   try {
@@ -196,6 +272,9 @@ app.post("/change-password", auth, async (req, res) => {
   if (!bcryptjs.compareSync(password, user.password))
     return res.json({ status: "error", message: "Incorrect password." });
 
+  if (newPassword.length < 8)
+    return res.json({ status: "error", message: "Password must be at least 8 characters long." });
+
   const hash = bcryptjs.hashSync(newPassword, bcryptjs.genSaltSync(10));
   await db.collection("users").updateOne({ _id: user._id }, { $set: { password: hash } });
 
@@ -212,17 +291,28 @@ app.post("/save-profile", auth, async (req, res) => {
   const profileImage = req.files.profileImage;
 
   if (profileImage?.size > 0) {
+    if (profileImage.size > MAX_PROFILE_IMAGE_BYTES) {
+      return res.json({ status: "error", message: "Profile image is too large." });
+    }
+
     const ext = profileImage.type.toLowerCase();
     if (!ext.includes("jpeg") && !ext.includes("jpg") && !ext.includes("png"))
       return res.json({ status: "error", message: "Only JPEG, JPG or PNG is allowed." });
 
-    if (fs.existsSync(profileImageObj.path)) fs.unlinkSync(profileImageObj.path);
+    if (profileImageObj.path && fs.existsSync(profileImageObj.path)) fs.unlinkSync(profileImageObj.path);
 
-    const fileLocation = `uploads/profiles/${Date.now()}-${profileImage.name}`;
+    const safeName = path.basename(profileImage.name).replace(/[^a-zA-Z0-9._-]/g, "_");
+    const generatedName = `${Date.now()}-${crypto.randomBytes(8).toString("hex")}-${safeName}`;
+    const fileLocation = path.join(profilesUploadDir, generatedName);
     fs.copyFileSync(profileImage.path, fileLocation);
     fs.unlinkSync(profileImage.path);
 
-    profileImageObj = { size: profileImage.size, path: fileLocation, name: profileImage.name, type: profileImage.type };
+    profileImageObj = {
+      size: profileImage.size,
+      path: `uploads/profiles/${generatedName}`,
+      name: safeName,
+      type: profileImage.type
+    };
   }
 
   await db.collection("users").updateOne(
@@ -235,34 +325,63 @@ app.post("/save-profile", auth, async (req, res) => {
 
 // Password Recovery - Send Email
 app.post("/send-password-recovery-email", async (req, res) => {
-  const { email } = req.fields;
-  if (!email) return res.json({ status: "error", message: "Please fill all fields." });
+  const clientKey = `recovery:${req.ip}`;
+  if (isRateLimited(clientKey, 5)) return res.status(429).json({ status: "error", message: "Too many attempts. Try later." });
+
+  const email = normalizeEmail(req.fields.email);
+  if (!email || !EMAIL_REGEX.test(email)) return res.json({ status: "error", message: "Please enter a valid email." });
 
   const user = await db.collection("users").findOne({ email });
-  if (!user) return res.json({ status: "error", message: "Email does not exist." });
+  if (!user) return res.json({ status: "success", message: "If the account exists, a verification code has been sent." });
 
-  const code = Math.floor(100000 + Math.random() * 900000);
-  await db.collection("users").updateOne({ _id: user._id }, { $set: { code } });
+  const code = crypto.randomInt(100000, 1000000);
+  await db.collection("users").updateOne(
+    { _id: user._id },
+    {
+      $set: {
+        code,
+        codeExpiresAt: new Date(Date.now() + 15 * 60 * 1000)
+      }
+    }
+  );
 
   const emailHtml = `Your password reset code is: <b style='font-size: 30px;'>${code}</b>`;
-  transport.sendMail({ from: nodemailerFrom, to: email, subject: "Password reset code", html: emailHtml });
 
-  res.json({ status: "success", message: "A verification code has been sent to your email." });
+  try {
+    await transport.sendMail({ from: nodemailerFrom, to: email, subject: "Password reset code", html: emailHtml });
+  } catch (error) {
+    console.error("Password recovery email error:", error);
+    return res.status(500).json({ status: "error", message: "Unable to send recovery email at the moment." });
+  }
+
+  res.json({ status: "success", message: "If the account exists, a verification code has been sent." });
 });
 
 // Reset Password
 app.post("/reset-password", async (req, res) => {
-  const { email, code, password } = req.fields;
+  const clientKey = `reset-password:${req.ip}`;
+  if (isRateLimited(clientKey, 10)) return res.status(429).json({ status: "error", message: "Too many attempts. Try later." });
+
+  const email = normalizeEmail(req.fields.email);
+  const code = req.fields.code;
+  const password = String(req.fields.password || "");
   if (!email || !code || !password)
     return res.json({ status: "error", message: "Please fill all fields." });
 
-  const user = await db.collection("users").findOne({ email, code: parseInt(code) });
+  if (password.length < 8)
+    return res.json({ status: "error", message: "Password must be at least 8 characters long." });
+
+  const user = await db.collection("users").findOne({
+    email,
+    code: parseInt(code),
+    codeExpiresAt: { $gt: new Date() }
+  });
   if (!user) return res.json({ status: "error", message: "Invalid email/code." });
 
   const hash = bcryptjs.hashSync(password, bcryptjs.genSaltSync(10));
   await db.collection("users").updateOne(
     { _id: user._id },
-    { $set: { password: hash }, $unset: { code: "" } }
+    { $set: { password: hash }, $unset: { code: "", codeExpiresAt: "" } }
   );
 
   res.json({ status: "success", message: "Password has been reset." });
@@ -280,6 +399,9 @@ app.post("/verify-account", async (req, res) => {
 
   res.json({ status: "success", message: "Account verified. Please login again." });
 });
+
+// Health Check
+app.get("/healthz", (req, res) => res.json({ status: "ok" }));
 
 // ================= View Routes =================
 app.get("/", (req, res) => res.render("index", { mainURL: MAIN_URL }));
@@ -349,8 +471,42 @@ function broadcastOnlineUsers() {
   });
 }
 
+function isAuthorizedSignalSender(connection, payload) {
+  const from = String(payload?.from || "").trim();
+  if (!from) return false;
+  return connection?.auth?.username === from;
+}
+
 wsServer.on("request", (req) => {
+  if (WS_ORIGIN_ALLOWLIST.length > 0 && req.origin && !WS_ORIGIN_ALLOWLIST.includes(req.origin)) {
+    req.reject(403, "Forbidden origin");
+    return;
+  }
+
+  const query = new URL(req.httpRequest.url, MAIN_URL).searchParams;
+  const queryToken = query.get("token");
+  const authHeader = req.httpRequest.headers["authorization"] || "";
+  const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  const token = bearerToken || queryToken;
+
+  if (!token) {
+    req.reject(401, "WebSocket auth token required");
+    return;
+  }
+
+  let tokenPayload;
+  try {
+    tokenPayload = jwt.verify(token, JWT_SECRET);
+  } catch (err) {
+    req.reject(401, "Invalid WebSocket auth token");
+    return;
+  }
+
   const connection = req.accept();
+  connection.auth = {
+    username: tokenPayload.username || "",
+    userId: tokenPayload.userId || ""
+  };
   console.log("✅ New WebSocket connection");
 
   connection.on("message", (message) => {
@@ -363,6 +519,14 @@ wsServer.on("request", (req) => {
           case "store_user": {
             const username = data.username;
             if (!username) return;
+            if (!connection.auth?.username || username !== connection.auth.username) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized user mapping",
+                errorCode: "UNAUTHORIZED_USERNAME"
+              }));
+              return;
+            }
             
             // Check if user already exists
             const existingUser = findUser(username);
@@ -382,6 +546,14 @@ wsServer.on("request", (req) => {
 
           // ================= WebRTC Signaling Messages =================
           case "call_request": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const { from, to } = data;
             console.log(`📞 Call request from ${from} to ${to}`);
             
@@ -406,6 +578,14 @@ wsServer.on("request", (req) => {
           }
 
           case "call_accepted": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const { from, to } = data;
             console.log(`✅ Call accepted by ${from} to ${to}`);
             
@@ -418,6 +598,14 @@ wsServer.on("request", (req) => {
           }
 
           case "call_rejected": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const { from, to } = data;
             console.log(`❌ Call rejected by ${from} to ${to}`);
             
@@ -430,6 +618,14 @@ wsServer.on("request", (req) => {
           }
 
           case "sdp_offer": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const { from, to, sdp } = data;
             console.log(`📋 SDP Offer from ${from} to ${to}`);
             
@@ -447,6 +643,14 @@ wsServer.on("request", (req) => {
           }
 
           case "sdp_answer": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const { from, to, sdp } = data;
             console.log(`📋 SDP Answer from ${from} to ${to}`);
             
@@ -464,6 +668,14 @@ wsServer.on("request", (req) => {
           }
 
           case "ice_candidate": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const { from, to, candidate, sdpMid, sdpMLineIndex } = data;
             console.log(`🧊 ICE Candidate from ${from} to ${to}`);
             
@@ -483,6 +695,14 @@ wsServer.on("request", (req) => {
           }
 
           case "call_end": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const { from, to } = data;
             console.log(`📴 Call ended by ${from} to ${to}`);
             
@@ -496,6 +716,14 @@ wsServer.on("request", (req) => {
 
           // ================= Legacy Message Types =================
           case "send_to_user": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const targetUser = findUser(data.to);
             if (targetUser) {
               sendToUser(data.to, {
@@ -508,7 +736,31 @@ wsServer.on("request", (req) => {
             break;
           }
 
+          case "request_online_users": {
+            connection.send(JSON.stringify({
+              type: "online_users",
+              users: users.map(u => u.name)
+            }));
+            break;
+          }
+
+          case "ping": {
+            connection.send(JSON.stringify({
+              type: "pong",
+              timestamp: Date.now()
+            }));
+            break;
+          }
+
           case "broadcast": {
+            if (!isAuthorizedSignalSender(connection, data)) {
+              connection.send(JSON.stringify({
+                type: "call_error",
+                message: "Unauthorized sender",
+                errorCode: "UNAUTHORIZED_SENDER"
+              }));
+              break;
+            }
             const broadcastMessage = {
               type: "broadcast",
               message: data.message,
@@ -563,5 +815,21 @@ setInterval(() => {
     broadcastOnlineUsers();
   }
 }, 30000);
+
+
+
+app.use((err, req, res, next) => {
+  console.error("Unhandled API error:", err);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ status: "error", message: "Internal server error." });
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught exception:", error);
+});
 
 console.log("🎯 WebRTC Signaling Server ready for connections");
