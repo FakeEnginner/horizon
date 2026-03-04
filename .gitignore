@@ -42,3 +42,4 @@ admin/vendor/
 vendor/
 /vendor/
 .DS_Store
+interceptor/.jwt-secret
