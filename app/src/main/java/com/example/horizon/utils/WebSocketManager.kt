@@ -51,7 +51,10 @@ object WebSocketManager {
             return
         }
 
-        if (webSocket != null) {
+        if (isConnected && this.username != username) {
+            Log.d(TAG, "Connected as different user. Reconnecting.")
+            disconnect()
+        } else if (webSocket != null) {
             disconnect()
         }
 
@@ -83,6 +86,7 @@ object WebSocketManager {
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
+                Log.d(TAG, "📩 Received message: $text")
                 onMessageReceived?.invoke(text)
             }
 
@@ -139,6 +143,7 @@ object WebSocketManager {
         }.toString()
 
         sendMessage(requestUsersMessage)
+        Log.d(TAG, "Requested online users list")
     }
 
     fun sendMessage(message: String) {
