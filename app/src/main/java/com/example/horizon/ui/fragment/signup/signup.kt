@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.example.horizon.Interface.FrameLayoutChanger
@@ -46,9 +47,13 @@ class signup: Fragment() {
 
     private fun setupClickListeners() {
         binding.apply {
-            createaccount.setOnClickListener {
-                viewModel.signUp(usernameOr.text.toString() , password.text.toString() , cnfpassword.text.toString())
+            val submitAction = {
+                viewModel.signUp(usernameOr.text.toString(), password.text.toString(), cnfpassword.text.toString())
             }
+            createaccountContainer.setOnClickListener { submitAction() }
+            createaccount.setOnClickListener { submitAction() }
+            Loginbtn.setOnClickListener { submitAction() }
+
             logintxt.setOnClickListener {
                 viewModel.onLoginClicked()
             }
@@ -82,11 +87,11 @@ class signup: Fragment() {
     }
 
     private fun showError(message: String) {
-        // Show error message to user
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
     private fun showLoading() {
-        // Show loading indicator
+        Toast.makeText(requireContext(), "Please wait...", Toast.LENGTH_SHORT).show()
     }
 
 
